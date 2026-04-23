@@ -36,47 +36,62 @@ router.get('/', async (req, res) => {
 router.post('/', async (req, res) => {
   const { name, exerciseIds = [] } = req.body
   if (!name) return res.status(400).json({ error: 'name is required' })
+  const client = await pool.connect()
   try {
-    const { rows } = await pool.query(
+    await client.query('BEGIN')
+    const { rows } = await client.query(
       'INSERT INTO routines (user_id, name) VALUES ($1, $2) RETURNING *',
       [req.user.id, name]
     )
     const routine = rows[0]
     for (let i = 0; i < exerciseIds.length; i++) {
-      await pool.query(
+      await client.query(
         'INSERT INTO routine_exercises (routine_id, exercise_id, sort_order) VALUES ($1, $2, $3)',
         [routine.id, exerciseIds[i], i]
       )
     }
+    await client.query('COMMIT')
     res.status(201).json(await getRoutineWithExercises(routine.id))
   } catch (err) {
+    await client.query('ROLLBACK')
     console.error(err)
     res.status(500).json({ error: 'Server error' })
+  } finally {
+    client.release()
   }
 })
 
 // PUT /api/routines/:id
 router.put('/:id', async (req, res) => {
   const { name, exerciseIds } = req.body
+  const client = await pool.connect()
   try {
-    const routine = (await pool.query(
+    const routine = (await client.query(
       'SELECT * FROM routines WHERE id = $1 AND user_id = $2', [req.params.id, req.user.id]
     )).rows[0]
-    if (!routine) return res.status(404).json({ error: 'Routine not found' })
-    if (name) await pool.query('UPDATE routines SET name = $1 WHERE id = $2', [name, routine.id])
+    if (!routine) {
+      client.release()
+      return res.status(404).json({ error: 'Routine not found' })
+    }
+    await client.query('BEGIN')
+    if (name) await client.query('UPDATE routines SET name = $1 WHERE id = $2', [name, routine.id])
     if (exerciseIds) {
-      await pool.query('DELETE FROM routine_exercises WHERE routine_id = $1', [routine.id])
+      await client.query('DELETE FROM routine_exercises WHERE routine_id = $1', [routine.id])
       for (let i = 0; i < exerciseIds.length; i++) {
-        await pool.query(
+        await client.query(
           'INSERT INTO routine_exercises (routine_id, exercise_id, sort_order) VALUES ($1, $2, $3)',
           [routine.id, exerciseIds[i], i]
         )
       }
     }
+    await client.query('COMMIT')
     res.json(await getRoutineWithExercises(routine.id))
   } catch (err) {
+    await client.query('ROLLBACK')
     console.error(err)
     res.status(500).json({ error: 'Server error' })
+  } finally {
+    client.release()
   }
 })
 
