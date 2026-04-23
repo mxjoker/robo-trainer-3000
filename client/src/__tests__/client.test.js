@@ -99,6 +99,15 @@ describe('api client', () => {
     Object.defineProperty(navigator, 'onLine', { value: true, writable: true, configurable: true })
   })
 
+  it('rethrows error for DELETE requests when offline (DELETE not queued)', async () => {
+    navigator.onLine = false
+    global.fetch = vi.fn().mockRejectedValueOnce(new Error('Network error'))
+    enqueue.mockClear()
+    await expect(api.delete('/some-resource')).rejects.toThrow('Network error')
+    expect(enqueue).not.toHaveBeenCalled()
+    navigator.onLine = true
+  })
+
   it('rethrows error normally when online and fetch throws', async () => {
     Object.defineProperty(navigator, 'onLine', { value: true, writable: true, configurable: true })
     fetch.mockRejectedValueOnce(new Error('Server error'))

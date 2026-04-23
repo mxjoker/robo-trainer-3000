@@ -29,7 +29,8 @@ async function request(path, options = {}) {
     return res.json()
   } catch (err) {
     // Queue POST/PUT requests when offline (not GETs — we can't return stale data here)
-    if (options.method && options.method !== 'GET' && !navigator.onLine) {
+    const QUEUEABLE_METHODS = ['POST', 'PUT']
+    if (QUEUEABLE_METHODS.includes(options.method) && !navigator.onLine) {
       await enqueue({ path, body: options.body ? JSON.parse(options.body) : null, method: options.method })
       return { _queued: true }
     }

@@ -28,14 +28,22 @@ export async function remove(id) {
   await db.delete(STORE, id)
 }
 
+let flushing = false
+
 export async function flushQueue(apiFn) {
-  const items = await dequeueAll()
-  for (const item of items) {
-    try {
-      await apiFn(item.path, item.body, item.method)
-      await remove(item.id)
-    } catch {
-      // Leave in queue if still failing
+  if (flushing) return
+  flushing = true
+  try {
+    const items = await dequeueAll()
+    for (const item of items) {
+      try {
+        await apiFn(item.path, item.body, item.method)
+        await remove(item.id)
+      } catch {
+        // Leave in queue if still failing
+      }
     }
+  } finally {
+    flushing = false
   }
 }
