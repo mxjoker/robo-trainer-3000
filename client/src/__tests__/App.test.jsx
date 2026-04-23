@@ -12,9 +12,22 @@ vi.mock('../context/AuthContext', async (importOriginal) => {
   }
 })
 
+vi.mock('../api/client', () => ({
+  api: {
+    get: vi.fn().mockRejectedValue(new Error('not mocked')),
+    post: vi.fn(),
+  }
+}))
+
+import { api } from '../api/client'
+
 describe('App routing', () => {
+  beforeEach(() => {
+    api.get.mockRejectedValue(new Error('not mocked'))
+  })
+
   afterEach(() => {
-    vi.restoreAllMocks()
+    vi.clearAllMocks()
   })
 
   it('unauthenticated user is redirected to /login', async () => {
@@ -68,7 +81,7 @@ describe('App routing', () => {
     )
 
     await waitFor(() => {
-      expect(screen.getByText('Dashboard — coming soon')).toBeInTheDocument()
+      expect(screen.getByText('Day streak')).toBeInTheDocument()
     })
   })
 
@@ -99,7 +112,7 @@ describe('App routing', () => {
     )
 
     await waitFor(() => {
-      expect(screen.getByText('Dashboard — coming soon')).toBeInTheDocument()
+      expect(screen.getByText('Day streak')).toBeInTheDocument()
     })
   })
 })
