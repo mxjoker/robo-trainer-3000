@@ -23,7 +23,7 @@ const s = {
 }
 
 function makeSet(prev = null) {
-  return { weight: prev?.weight || '', reps: prev?.reps || '', confirmed: false }
+  return { weight: prev?.weight ?? '', reps: prev?.reps ?? '', confirmed: false }
 }
 
 export default function WorkoutLogger() {
@@ -60,7 +60,7 @@ export default function WorkoutLogger() {
   function updateSet(exIdx, setIdx, field, value) {
     setLoggedExercises(prev => prev.map((ex, i) => {
       if (i !== exIdx) return ex
-      const sets = ex.sets.map((s, j) => j === setIdx ? { ...s, [field]: value, confirmed: false } : s)
+      const sets = ex.sets.map((set, j) => j === setIdx ? { ...set, [field]: value, confirmed: false } : set)
       return { ...ex, sets }
     }))
   }
@@ -68,9 +68,9 @@ export default function WorkoutLogger() {
   function confirmSet(exIdx, setIdx) {
     setLoggedExercises(prev => prev.map((ex, i) => {
       if (i !== exIdx) return ex
-      const sets = ex.sets.map((s, j) => {
-        if (j !== setIdx) return s
-        return { ...s, confirmed: true }
+      const sets = ex.sets.map((set, j) => {
+        if (j !== setIdx) return set
+        return { ...set, confirmed: true }
       })
       // Auto-add next set pre-filled if this was the last
       const isLast = setIdx === ex.sets.length - 1
@@ -114,7 +114,7 @@ export default function WorkoutLogger() {
       {forPartner && <div style={s.pill}>Logging for partner</div>}
 
       {loggedExercises.map((ex, exIdx) => (
-        <div key={exIdx} style={s.exerciseCard}>
+        <div key={ex.exerciseId} style={s.exerciseCard}>
           <div style={s.exerciseName}>{ex.exerciseName}</div>
           <div style={s.colHeaders}>
             <div style={s.colLabel}>Set</div>
