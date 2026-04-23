@@ -66,9 +66,13 @@ export default function Stats() {
   }, [selectedExId])
 
   useEffect(() => {
-    const days = healthFilter === '7d' ? 7 : healthFilter === '30d' ? 30 : healthFilter === '90d' ? 90 : 365
-    const start = new Date(); start.setDate(start.getDate() - days)
-    api.get(`/stats/health?start=${start.toISOString().split('T')[0]}`).then(setHealthData).catch(() => {})
+    if (healthFilter === 'All') {
+      api.get('/stats/health').then(setHealthData).catch(() => {})
+    } else {
+      const days = healthFilter === '7d' ? 7 : healthFilter === '30d' ? 30 : 90
+      const start = new Date(); start.setDate(start.getDate() - days)
+      api.get(`/stats/health?start=${start.toISOString().split('T')[0]}`).then(setHealthData).catch(() => {})
+    }
   }, [healthFilter])
 
   return (

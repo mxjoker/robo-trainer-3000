@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
 // Mock api
@@ -131,6 +131,49 @@ describe('Stats', () => {
       const texts = weightEls.map(el => el.textContent)
       expect(texts.some(t => t.includes('225'))).toBe(true)
       expect(texts.some(t => t.includes('185'))).toBe(true)
+    })
+  })
+
+  it('changing exercise dropdown triggers new strength fetch for the selected exercise', async () => {
+    renderStats()
+    // Wait for the select to be populated with exercises
+    await waitFor(() => {
+      expect(screen.getByRole('combobox')).toBeInTheDocument()
+      expect(screen.getAllByText('Bench Press').length).toBeGreaterThanOrEqual(1)
+    })
+
+    // Clear mock calls recorded during initial load
+    api.get.mockClear()
+
+    // Change the select to exercise id 2 (Bench Press)
+    const select = screen.getByRole('combobox')
+    fireEvent.change(select, { target: { value: '2' } })
+
+    await waitFor(() => {
+      expect(api.get).toHaveBeenCalledWith('/stats/strength/2')
+    })
+  })
+
+  it('clicking 7d filter on Health tab triggers health data fetch with start param', async () => {
+    renderStats()
+
+    // Switch to Health tab
+    const healthTab = screen.getByText('Health')
+    await userEvent.click(healthTab)
+
+    await waitFor(() => {
+      expect(screen.getByText('7d')).toBeInTheDocument()
+    })
+
+    // Clear mock calls recorded during tab switch
+    api.get.mockClear()
+
+    // Click the 7d filter button
+    fireEvent.click(screen.getByText('7d'))
+
+    await waitFor(() => {
+      const calls = api.get.mock.calls.map(c => c[0])
+      expect(calls.some(url => url.startsWith('/stats/health?start='))).toBe(true)
     })
   })
 })
