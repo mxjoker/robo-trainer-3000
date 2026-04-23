@@ -1,3 +1,5 @@
+import { enqueue, flushQueue } from '../offline/queue'
+
 const BASE = '/api'
 
 function getToken() {
@@ -10,20 +12,38 @@ function authHeaders() {
 }
 
 async function request(path, options = {}) {
-  const res = await fetch(`${BASE}${path}`, {
-    ...options,
-    headers: {
-      ...(options.body !== undefined ? { 'Content-Type': 'application/json' } : {}),
-      ...authHeaders(),
-      ...(options.headers || {})
+  try {
+    const res = await fetch(`${BASE}${path}`, {
+      ...options,
+      headers: {
+        ...(options.body !== undefined ? { 'Content-Type': 'application/json' } : {}),
+        ...authHeaders(),
+        ...(options.headers || {})
+      }
+    })
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: res.statusText }))
+      throw Object.assign(new Error(err.error || 'Request failed'), { status: res.status })
     }
-  })
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: res.statusText }))
-    throw Object.assign(new Error(err.error || 'Request failed'), { status: res.status })
+    if (res.status === 204) return null
+    return res.json()
+  } catch (err) {
+    // Queue POST/PUT requests when offline (not GETs — we can't return stale data here)
+    if (options.method && options.method !== 'GET' && !navigator.onLine) {
+      await enqueue({ path, body: options.body ? JSON.parse(options.body) : null, method: options.method })
+      return { _queued: true }
+    }
+    throw err
   }
-  if (res.status === 204) return null
-  return res.json()
+}
+
+// Flush queued requests when back online
+if (typeof window !== 'undefined') {
+  window.addEventListener('online', () => {
+    flushQueue((path, body, method) =>
+      request(path, { method, body: body ? JSON.stringify(body) : undefined })
+    )
+  })
 }
 
 export const api = {

@@ -1,4 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+
+vi.mock('../offline/queue', () => ({
+  enqueue: vi.fn().mockResolvedValue(undefined),
+  flushQueue: vi.fn().mockResolvedValue(undefined),
+}))
+
+import { enqueue } from '../offline/queue'
 import { api } from '../api/client'
 
 function makeFetchResponse({ status = 200, body = null, ok = true }) {
@@ -74,5 +81,28 @@ describe('api client', () => {
 
     const callHeaders = fetch.mock.calls[0][1].headers
     expect(callHeaders).not.toHaveProperty('Authorization')
+  })
+
+  it('enqueues POST requests and returns { _queued: true } when offline and fetch throws', async () => {
+    Object.defineProperty(navigator, 'onLine', { value: false, writable: true, configurable: true })
+    fetch.mockRejectedValueOnce(new Error('Network error'))
+    enqueue.mockResolvedValueOnce(undefined)
+
+    const result = await api.post('/workouts', { name: 'Run' })
+
+    expect(result).toEqual({ _queued: true })
+    expect(enqueue).toHaveBeenCalledWith(expect.objectContaining({
+      path: '/workouts',
+      method: 'POST',
+    }))
+
+    Object.defineProperty(navigator, 'onLine', { value: true, writable: true, configurable: true })
+  })
+
+  it('rethrows error normally when online and fetch throws', async () => {
+    Object.defineProperty(navigator, 'onLine', { value: true, writable: true, configurable: true })
+    fetch.mockRejectedValueOnce(new Error('Server error'))
+
+    await expect(api.post('/workouts', { name: 'Run' })).rejects.toThrow('Server error')
   })
 })
