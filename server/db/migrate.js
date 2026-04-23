@@ -4,13 +4,16 @@ const path = require('path')
 const { pool } = require('./pool')
 
 async function migrate() {
-  const sql = fs.readFileSync(
-    path.join(__dirname, 'migrations', '001_initial_schema.sql'),
-    'utf8'
-  )
-  await pool.query(sql)
-  console.log('Migration complete')
-  await pool.end()
+  try {
+    const sql = fs.readFileSync(
+      path.join(__dirname, 'migrations', '001_initial_schema.sql'),
+      'utf8'
+    )
+    await pool.query(sql)
+    console.log('Migration complete')
+  } finally {
+    await pool.end()
+  }
 }
 
 migrate().catch(err => {
