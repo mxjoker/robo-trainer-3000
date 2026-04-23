@@ -3,7 +3,7 @@ const app = require('../app')
 const { pool } = require('../db/pool')
 
 beforeEach(async () => {
-  await pool.query('DELETE FROM users')
+  await pool.query('TRUNCATE users CASCADE')
 })
 
 afterAll(async () => {
