@@ -48,3 +48,66 @@ describe('GET /api/partner/profile', () => {
     expect(res.body.name).toBe('Sydney')
   })
 })
+
+describe('POST /api/partner/workouts', () => {
+  it('creates a workout for the partner', async () => {
+    const res = await request(app)
+      .post('/api/partner/workouts')
+      .set(authHeader(joeToken))
+      .send({ date: '2026-04-23', is_shared: true })
+    expect(res.status).toBe(201)
+    expect(res.body.is_shared).toBe(true)
+    expect(res.body.sets).toEqual([])
+    expect(res.body.date).toMatch(/2026-04-23/)
+  })
+
+  it('returns 404 when user has no partner', async () => {
+    // Create a standalone user with no partner
+    const { token: loneToken } = await createUser({ name: 'Lone', email: 'lone@test.com', password: 'pw' })
+    const res = await request(app)
+      .post('/api/partner/workouts')
+      .set(authHeader(loneToken))
+      .send({ date: '2026-04-23' })
+    expect(res.status).toBe(404)
+    expect(res.body.error).toBe('No partner linked')
+  })
+})
+
+describe('POST /api/partner/workouts/:id/sets', () => {
+  it("adds a set to the partner's workout", async () => {
+    // First create a workout for Sydney (using Joe's partner route)
+    const workoutRes = await request(app)
+      .post('/api/partner/workouts')
+      .set(authHeader(joeToken))
+      .send({ date: '2026-04-23', is_shared: true })
+    expect(workoutRes.status).toBe(201)
+    const workoutId = workoutRes.body.id
+
+    // Need an exercise
+    const exRes = await request(app)
+      .post('/api/exercises')
+      .set(authHeader(joeToken))
+      .send({ name: 'Squat', muscle_group: 'legs' })
+
+    // Add a set to Sydney's workout via Joe's partner route
+    const setRes = await request(app)
+      .post(`/api/partner/workouts/${workoutId}/sets`)
+      .set(authHeader(joeToken))
+      .send({ exercise_id: exRes.body.id, set_number: 1, weight_lbs: 135, reps: 8 })
+    expect(setRes.status).toBe(201)
+    expect(setRes.body.workout_id).toBe(workoutId)
+    expect(setRes.body.set_number).toBe(1)
+    expect(Number(setRes.body.weight_lbs)).toBe(135)
+    expect(setRes.body.reps).toBe(8)
+  })
+
+  it('returns 404 when user has no partner', async () => {
+    const { token: loneToken } = await createUser({ name: 'Lone2', email: 'lone2@test.com', password: 'pw' })
+    const res = await request(app)
+      .post('/api/partner/workouts/999/sets')
+      .set(authHeader(loneToken))
+      .send({ exercise_id: 1, set_number: 1 })
+    expect(res.status).toBe(404)
+    expect(res.body.error).toBe('No partner linked')
+  })
+})

@@ -76,4 +76,44 @@ router.get('/metrics', async (req, res) => {
   }
 })
 
+// POST /api/partner/workouts — create a workout on the partner's behalf
+router.post('/workouts', async (req, res) => {
+  try {
+    const partnerId = await getPartnerId(req.user.id)
+    if (!partnerId) return res.status(404).json({ error: 'No partner linked' })
+    const { date, is_shared } = req.body
+    const result = await pool.query(
+      'INSERT INTO workouts (user_id, date, is_shared) VALUES ($1, $2, $3) RETURNING *',
+      [partnerId, date || new Date().toISOString().split('T')[0], is_shared || false]
+    )
+    res.status(201).json({ ...result.rows[0], sets: [] })
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ error: 'Server error' })
+  }
+})
+
+// POST /api/partner/workouts/:id/sets — add a set to partner's workout
+router.post('/workouts/:id/sets', async (req, res) => {
+  try {
+    const partnerId = await getPartnerId(req.user.id)
+    if (!partnerId) return res.status(404).json({ error: 'No partner linked' })
+    // Verify the workout belongs to the partner
+    const workoutCheck = await pool.query(
+      'SELECT id FROM workouts WHERE id = $1 AND user_id = $2',
+      [req.params.id, partnerId]
+    )
+    if (!workoutCheck.rows[0]) return res.status(404).json({ error: 'Workout not found' })
+    const { exercise_id, set_number, weight_lbs, reps } = req.body
+    const result = await pool.query(
+      'INSERT INTO sets (workout_id, exercise_id, set_number, weight_lbs, reps) VALUES ($1,$2,$3,$4,$5) RETURNING *',
+      [req.params.id, exercise_id, set_number, weight_lbs ?? null, reps ?? null]
+    )
+    res.status(201).json(result.rows[0])
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ error: 'Server error' })
+  }
+})
+
 module.exports = router
