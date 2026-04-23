@@ -68,7 +68,7 @@ export default function Dashboard() {
         api.get('/partner/wellness')
       ]).then(([workouts, wellness]) => {
         setPartnerData({ profile, recentWorkout: workouts[0] || null, recentWellness: wellness[0] || null })
-      })
+      }).catch(() => {})
     }).catch(() => {})
   }, [])
 

@@ -117,6 +117,27 @@ describe('Dashboard', () => {
     })
   })
 
+  it('renders without crashing when partner workouts/wellness fetch fails', async () => {
+    // Profile resolves but workouts/wellness reject
+    // Dashboard should render (no partner card shown, no crash)
+    api.get.mockImplementation((path) => {
+      if (path === '/partner/profile') {
+        return Promise.resolve({ id: 2, name: 'Bob' })
+      }
+      if (path === '/partner/workouts' || path === '/partner/wellness') {
+        return Promise.reject(new Error('fetch failed'))
+      }
+      return Promise.reject(new Error('not found'))
+    })
+
+    renderDashboard()
+
+    // Wait for async effects to settle; partner card should not be shown
+    await waitFor(() => {
+      expect(screen.queryByText('Bob')).not.toBeInTheDocument()
+    })
+  })
+
   it('shows partner card when partner data is available', async () => {
     api.get.mockImplementation((path) => {
       if (path === '/partner/profile') {
