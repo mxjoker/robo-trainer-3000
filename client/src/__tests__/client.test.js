@@ -26,9 +26,9 @@ describe('api client', () => {
 
     const result = await api.get('/workouts')
 
-    expect(fetch).toHaveBeenCalledWith('/api/workouts', expect.objectContaining({
-      headers: expect.objectContaining({ 'Content-Type': 'application/json' })
-    }))
+    expect(fetch).toHaveBeenCalledWith('/api/workouts', expect.any(Object))
+    const callHeaders = fetch.mock.calls[0][1].headers
+    expect(callHeaders).not.toHaveProperty('Content-Type')
     expect(result).toEqual(data)
   })
 

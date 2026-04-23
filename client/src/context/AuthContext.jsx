@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react'
 import { api } from '../api/client'
 
 const AuthContext = createContext(null)
@@ -16,39 +16,49 @@ export function AuthProvider({ children }) {
       .finally(() => setLoading(false))
   }, [])
 
-  async function login(email, password) {
+  const login = useCallback(async (email, password) => {
     const { token, user } = await api.post('/auth/login', { email, password })
+    if (!token || !user) throw new Error('Invalid response from server')
     localStorage.setItem('rt_token', token)
     setCurrentUser(user)
     return user
-  }
+  }, [])
 
-  async function register(name, email, password) {
+  const register = useCallback(async (name, email, password) => {
     const { token, user } = await api.post('/auth/register', { name, email, password })
+    if (!token || !user) throw new Error('Invalid response from server')
     localStorage.setItem('rt_token', token)
     setCurrentUser(user)
     return user
-  }
+  }, [])
 
-  async function acceptInvite(name, email, password, inviteToken) {
+  const acceptInvite = useCallback(async (name, email, password, inviteToken) => {
     const { token, user } = await api.post('/auth/accept-invite', { name, email, password, inviteToken })
+    if (!token || !user) throw new Error('Invalid response from server')
     localStorage.setItem('rt_token', token)
     setCurrentUser(user)
     return user
-  }
+  }, [])
 
-  function logout() {
+  const logout = useCallback(() => {
     localStorage.removeItem('rt_token')
     setCurrentUser(null)
-  }
+  }, [])
+
+  const value = useMemo(
+    () => ({ currentUser, loading, login, register, acceptInvite, logout }),
+    [currentUser, loading, login, register, acceptInvite, logout]
+  )
 
   return (
-    <AuthContext.Provider value={{ currentUser, loading, login, register, acceptInvite, logout }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   )
 }
 
 export function useAuth() {
-  return useContext(AuthContext)
+  const ctx = useContext(AuthContext)
+  if (ctx === null) throw new Error('useAuth must be used inside AuthProvider')
+  return ctx
 }

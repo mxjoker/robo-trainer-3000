@@ -13,7 +13,7 @@ async function request(path, options = {}) {
   const res = await fetch(`${BASE}${path}`, {
     ...options,
     headers: {
-      'Content-Type': 'application/json',
+      ...(options.body !== undefined ? { 'Content-Type': 'application/json' } : {}),
       ...authHeaders(),
       ...(options.headers || {})
     }

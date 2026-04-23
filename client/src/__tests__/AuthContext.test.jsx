@@ -15,6 +15,25 @@ function AuthConsumer() {
   )
 }
 
+// Wrapper for tests that need raw boolean/null display
+function AuthProviderWrapper() {
+  return (
+    <AuthProvider>
+      <AuthProviderConsumer />
+    </AuthProvider>
+  )
+}
+
+function AuthProviderConsumer() {
+  const { currentUser, loading } = useAuth()
+  return (
+    <div>
+      <span data-testid="loading">{String(loading)}</span>
+      <span data-testid="user">{String(currentUser)}</span>
+    </div>
+  )
+}
+
 function makeFetchResponse({ status = 200, body = null, ok = true }) {
   return {
     ok,
@@ -142,5 +161,18 @@ describe('AuthContext', () => {
 
     expect(screen.getByTestId('user').textContent).toBe('existing@user.com')
     expect(fetch).toHaveBeenCalledWith('/api/auth/me', expect.any(Object))
+  })
+
+  it('clears invalid token when /auth/me returns 401', async () => {
+    localStorage.setItem('rt_token', 'bad-token')
+    global.fetch = vi.fn().mockResolvedValueOnce({
+      ok: false,
+      status: 401,
+      json: async () => ({ error: 'Unauthorized' }),
+    })
+    render(<AuthProviderWrapper />)
+    await waitFor(() => expect(screen.getByTestId('loading')).toHaveTextContent('false'))
+    expect(screen.getByTestId('user')).toHaveTextContent('null')
+    expect(localStorage.getItem('rt_token')).toBeNull()
   })
 })
