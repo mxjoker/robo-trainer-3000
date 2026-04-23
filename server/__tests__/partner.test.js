@@ -110,4 +110,24 @@ describe('POST /api/partner/workouts/:id/sets', () => {
     expect(res.status).toBe(404)
     expect(res.body.error).toBe('No partner linked')
   })
+
+  it('returns 404 for a workout not owned by the partner', async () => {
+    // Create a third user with no relation to Joe or Sydney
+    const { token: thirdToken } = await createUser({ name: 'Third', email: 'third@test.com', password: 'pw' })
+
+    // Create a workout owned by the third user (via their own workouts route)
+    const thirdWorkoutRes = await request(app)
+      .post('/api/workouts')
+      .set(authHeader(thirdToken))
+      .send({ date: '2026-04-23' })
+    expect(thirdWorkoutRes.status).toBe(201)
+    const thirdWorkoutId = thirdWorkoutRes.body.id
+
+    // Joe tries to add a set to the third user's workout via the partner route
+    const res = await request(app)
+      .post(`/api/partner/workouts/${thirdWorkoutId}/sets`)
+      .set(authHeader(joeToken))
+      .send({ exercise_id: 1, set_number: 1, weight_lbs: 100, reps: 5 })
+    expect(res.status).toBe(404)
+  })
 })

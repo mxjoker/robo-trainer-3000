@@ -84,7 +84,7 @@ router.post('/workouts', async (req, res) => {
     const { date, is_shared } = req.body
     const result = await pool.query(
       'INSERT INTO workouts (user_id, date, is_shared) VALUES ($1, $2, $3) RETURNING *',
-      [partnerId, date || new Date().toISOString().split('T')[0], is_shared || false]
+      [partnerId, date || new Date().toISOString().split('T')[0], is_shared ?? false]
     )
     res.status(201).json({ ...result.rows[0], sets: [] })
   } catch (err) {

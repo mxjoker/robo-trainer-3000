@@ -142,7 +142,7 @@ describe('SharedWorkoutLogger', () => {
         reps: 5,
       }))
       // Partner's set posted to partner's workout (id: 20)
-      expect(api.post).toHaveBeenCalledWith('/workouts/20/sets', expect.objectContaining({
+      expect(api.post).toHaveBeenCalledWith('/partner/workouts/20/sets', expect.objectContaining({
         exercise_id: 1,
         set_number: 1,
         weight_lbs: 150,

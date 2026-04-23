@@ -104,7 +104,7 @@ export default function SharedWorkoutLogger() {
             })
           }
           if (partnerWorkoutId) {
-            await api.post(`/workouts/${partnerWorkoutId}/sets`, {
+            await api.post(`/partner/workouts/${partnerWorkoutId}/sets`, {
               exercise_id: ex.exerciseId, set_number: i + 1,
               weight_lbs: set.partner.weight !== '' ? Number(set.partner.weight) : null,
               reps: set.partner.reps !== '' ? Number(set.partner.reps) : null
