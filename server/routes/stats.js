@@ -71,17 +71,15 @@ router.get('/consistency', async (req, res) => {
     }
 
     // Longest streak
-    let longest_streak = 0
-    let temp = 0
-    for (let i = 0; i < dates.length; i++) {
-      if (i === 0) { temp = 1; continue }
+    let longest_streak = dates.length > 0 ? 1 : 0
+    let temp = dates.length > 0 ? 1 : 0
+    for (let i = 1; i < dates.length; i++) {
       const prev = new Date(dates[i - 1])
       const curr = new Date(dates[i])
       const diff = (curr - prev) / (1000 * 60 * 60 * 24)
       temp = diff === 1 ? temp + 1 : 1
       if (temp > longest_streak) longest_streak = temp
     }
-    if (temp > longest_streak) longest_streak = temp
 
     res.json({ workout_dates: dates, current_streak, longest_streak, total_workouts })
   } catch (err) {

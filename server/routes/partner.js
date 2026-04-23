@@ -29,7 +29,7 @@ router.get('/workouts', async (req, res) => {
     const partnerId = await getPartnerId(req.user.id)
     if (!partnerId) return res.status(404).json({ error: 'No partner linked' })
     const workouts = await pool.query(
-      'SELECT * FROM workouts WHERE user_id = $1 ORDER BY date DESC', [partnerId]
+      'SELECT id, user_id, date, routine_id, notes, duration_minutes, is_shared FROM workouts WHERE user_id = $1 ORDER BY date DESC', [partnerId]
     )
     const withSets = await Promise.all(workouts.rows.map(async w => {
       const sets = (await pool.query(
@@ -51,7 +51,9 @@ router.get('/wellness', async (req, res) => {
     const partnerId = await getPartnerId(req.user.id)
     if (!partnerId) return res.status(404).json({ error: 'No partner linked' })
     const result = await pool.query(
-      'SELECT * FROM wellness_logs WHERE user_id = $1 ORDER BY date DESC', [partnerId]
+      `SELECT id, user_id, date, pain_level, energy_level, mood, sleep_hours,
+        water_oz, creatine_taken, pain_areas, notes
+ FROM wellness_logs WHERE user_id = $1 ORDER BY date DESC`, [partnerId]
     )
     res.json(result.rows)
   } catch (err) {
@@ -65,7 +67,7 @@ router.get('/metrics', async (req, res) => {
     const partnerId = await getPartnerId(req.user.id)
     if (!partnerId) return res.status(404).json({ error: 'No partner linked' })
     const result = await pool.query(
-      'SELECT * FROM body_metrics WHERE user_id = $1 ORDER BY date DESC', [partnerId]
+      'SELECT id, user_id, date, weight_lbs, notes FROM body_metrics WHERE user_id = $1 ORDER BY date DESC', [partnerId]
     )
     res.json(result.rows)
   } catch (err) {
