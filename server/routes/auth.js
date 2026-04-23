@@ -58,10 +58,15 @@ router.post('/login', async (req, res) => {
 
 // POST /api/auth/invite  (requires auth)
 router.post('/invite', verifyToken, async (req, res) => {
-  const token = uuidv4()
-  await pool.query('UPDATE users SET invite_token = $1 WHERE id = $2', [token, req.user.id])
-  const baseUrl = process.env.CLIENT_ORIGIN || 'http://localhost:5173'
-  res.json({ inviteUrl: `${baseUrl}/accept-invite?token=${token}` })
+  try {
+    const token = uuidv4()
+    await pool.query('UPDATE users SET invite_token = $1 WHERE id = $2', [token, req.user.id])
+    const baseUrl = process.env.CLIENT_ORIGIN || 'http://localhost:5173'
+    res.json({ inviteUrl: `${baseUrl}/accept-invite?token=${token}` })
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ error: 'Server error' })
+  }
 })
 
 // POST /api/auth/accept-invite
