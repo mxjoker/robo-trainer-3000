@@ -45,7 +45,7 @@ export default function AcceptInvite() {
       <div style={s.sub}>Create your account to connect</div>
       <div>
         <label style={s.label}>Name</label>
-        <input style={s.input} value={name} onChange={e => setName(e.target.value)} required />
+        <input style={s.input} type="text" value={name} onChange={e => setName(e.target.value)} required autoComplete="name" />
       </div>
       <div>
         <label style={s.label}>Email</label>

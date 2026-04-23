@@ -42,7 +42,7 @@ export default function Register() {
       <div style={s.sub}>You'll invite your partner after signing up</div>
       <div>
         <label style={s.label}>Name</label>
-        <input style={s.input} value={name} onChange={e => setName(e.target.value)} required autoComplete="name" />
+        <input style={s.input} type="text" value={name} onChange={e => setName(e.target.value)} required autoComplete="name" />
       </div>
       <div>
         <label style={s.label}>Email</label>

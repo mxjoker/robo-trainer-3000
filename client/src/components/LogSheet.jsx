@@ -33,6 +33,8 @@ export default function LogSheet({ onClose }) {
   const [forJoe, setForJoe] = useState(true)
   const [forPartner, setForPartner] = useState(false)
 
+  if (!currentUser) return null
+
   const partnerName = currentUser.partner_name || 'Partner'
   const bothSelected = type === 'workout' && forJoe && forPartner
   const ctaLabel = bothSelected ? 'Start Shared Workout' : type === 'workout' ? 'Start Workout' : 'Log Wellness'
@@ -64,7 +66,7 @@ export default function LogSheet({ onClose }) {
 
         <div style={s.sectionLabel}>For who? {type === 'workout' ? '(tap to toggle)' : '(wellness is individual)'}</div>
         <div style={s.row}>
-          <button style={s.personBtn(forJoe, '#7c6af7')} onClick={() => type === 'workout' ? setForJoe(v => !v) : setForJoe(true)}>
+          <button style={s.personBtn(forJoe, '#7c6af7')} onClick={() => type === 'workout' ? setForJoe(v => forPartner ? !v : true) : setForJoe(true)}>
             {forJoe && <span style={s.check}>✓</span>}
             {currentUser.name?.charAt(0) || 'J'}
             <div style={{ fontSize: 11, marginTop: 2 }}>{currentUser.name?.split(' ')[0] || 'You'}</div>
