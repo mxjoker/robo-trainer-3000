@@ -62,9 +62,8 @@ router.post('/', async (req, res) => {
        sleep_hours ?? null, water_oz ?? null,
        creatine_taken ?? false, pain_areas ?? [], notes ?? null]
     )
-    const row = result.rows[0]
-    const status = row.inserted ? 201 : 200
-    res.status(status).json(row)
+    const { inserted, ...row } = result.rows[0]
+    res.status(inserted ? 201 : 200).json(row)
   } catch (err) {
     console.error(err)
     res.status(500).json({ error: 'Server error' })

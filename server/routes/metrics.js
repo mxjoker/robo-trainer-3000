@@ -33,8 +33,8 @@ router.post('/', async (req, res) => {
        RETURNING *, (xmax = 0) AS inserted`,
       [req.user.id, logDate, weight_lbs ?? null, notes ?? null]
     )
-    const row = result.rows[0]
-    res.status(row.inserted ? 201 : 200).json(row)
+    const { inserted, ...row } = result.rows[0]
+    res.status(inserted ? 201 : 200).json(row)
   } catch (err) {
     console.error(err)
     res.status(500).json({ error: 'Server error' })
