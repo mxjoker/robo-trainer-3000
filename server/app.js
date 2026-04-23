@@ -13,7 +13,10 @@ const exportRoutes = require('./routes/export')
 
 const app = express()
 
-app.use(cors())
+app.use(cors({
+  origin: process.env.CLIENT_ORIGIN || 'http://localhost:5173',
+  credentials: true,
+}))
 app.use(express.json())
 
 app.use('/api/auth', authRoutes)
@@ -25,5 +28,12 @@ app.use('/api/metrics', metricsRoutes)
 app.use('/api/partner', partnerRoutes)
 app.use('/api/stats', statsRoutes)
 app.use('/api/export', exportRoutes)
+
+// Central error handler — must be last middleware
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, next) => {
+  console.error(err)
+  res.status(err.status || 500).json({ error: err.message || 'Internal server error' })
+})
 
 module.exports = app
