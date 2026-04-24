@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../api/client'
 
+const MUSCLE_GROUPS = ['chest', 'back', 'shoulders', 'biceps', 'triceps', 'legs', 'glutes', 'hamstrings', 'core', 'other']
+
 const COL = { joe: '#7c6af7', partner: '#f7a76c' }
 
 const s = {
@@ -29,7 +31,15 @@ const s = {
   }),
   addExBtn: { background: '#1a1a2e', border: '1px solid #252540', borderRadius: 10, padding: 12, color: '#7c6af7', fontSize: 13, cursor: 'pointer', width: '100%', marginBottom: 12, fontWeight: 600 },
   finishBtn: { background: '#7c6af7', border: 'none', borderRadius: 10, padding: 14, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', width: '100%', marginTop: 8 },
-  picker: { background: '#111', border: '1px solid #333', borderRadius: 8, padding: 8, color: '#fff', fontSize: 14, width: '100%', marginBottom: 12, outline: 'none' }
+  picker: { background: '#111', border: '1px solid #333', borderRadius: 8, padding: 8, color: '#fff', fontSize: 14, width: '100%', marginBottom: 6, outline: 'none' },
+  cantFindLink: { background: 'none', border: 'none', color: '#7c6af7', fontSize: 12, cursor: 'pointer', padding: '4px 0', marginBottom: 12, display: 'block', textAlign: 'left' },
+  newExForm: { background: '#1a1a2e', border: '1px solid #333', borderRadius: 10, padding: 14, marginBottom: 12 },
+  newExInput: { background: '#252540', border: '1px solid #333', borderRadius: 6, padding: '9px 12px', color: '#fff', fontSize: 13, width: '100%', outline: 'none', marginBottom: 8 },
+  newExSelect: { background: '#252540', border: '1px solid #333', borderRadius: 6, padding: '9px 12px', color: '#fff', fontSize: 13, width: '100%', outline: 'none', marginBottom: 8 },
+  newExCheckRow: { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, fontSize: 13, color: '#ccc' },
+  newExActions: { display: 'flex', gap: 8 },
+  addLogBtn: { flex: 1, background: '#7c6af7', border: 'none', borderRadius: 8, padding: '10px 0', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' },
+  cancelLink: { background: 'none', border: 'none', color: '#7c6af7', fontSize: 12, cursor: 'pointer', padding: '10px 8px' },
 }
 
 function makeSet(prev = null) {
@@ -50,6 +60,11 @@ export default function SharedWorkoutLogger() {
   const [partnerWorkoutId, setPartnerWorkoutId] = useState(null)
   const [loggedExercises, setLoggedExercises] = useState([])
   const [showPicker, setShowPicker] = useState(false)
+  const [showNewForm, setShowNewForm] = useState(false)
+  const [newName, setNewName] = useState('')
+  const [newMuscle, setNewMuscle] = useState('')
+  const [newIsPT, setNewIsPT] = useState(false)
+  const [addingNew, setAddingNew] = useState(false)
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
@@ -69,6 +84,29 @@ export default function SharedWorkoutLogger() {
     if (!ex) return
     setLoggedExercises(prev => [...prev, { exerciseId: ex.id, exerciseName: ex.name, sets: [makeSet()] }])
     setShowPicker(false)
+  }
+
+  async function addNewAndLog() {
+    if (!newName.trim()) return
+    setAddingNew(true)
+    try {
+      const ex = await api.post('/exercises', {
+        name: newName.trim(),
+        muscle_group: newMuscle || undefined,
+        is_pt_exercise: newIsPT
+      })
+      setAllExercises(prev => [...prev, ex])
+      setLoggedExercises(prev => [...prev, { exerciseId: ex.id, exerciseName: ex.name, sets: [makeSet()] }])
+      setNewName('')
+      setNewMuscle('')
+      setNewIsPT(false)
+      setShowNewForm(false)
+      setShowPicker(false)
+    } catch (err) {
+      alert('Error creating exercise: ' + err.message)
+    } finally {
+      setAddingNew(false)
+    }
   }
 
   function updateSet(exIdx, setIdx, person, field, value) {
@@ -189,10 +227,51 @@ export default function SharedWorkoutLogger() {
       ))}
 
       {showPicker ? (
-        <select style={s.picker} onChange={e => addExercise(e.target.value)} defaultValue="">
-          <option value="" disabled>Select exercise...</option>
-          {allExercises.map(ex => <option key={ex.id} value={ex.id}>{ex.name}</option>)}
-        </select>
+        <>
+          {showNewForm ? (
+            <div style={s.newExForm}>
+              <input
+                style={s.newExInput}
+                placeholder="Exercise name (required)"
+                value={newName}
+                onChange={e => setNewName(e.target.value)}
+                aria-label="Exercise name"
+              />
+              <select
+                style={s.newExSelect}
+                value={newMuscle}
+                onChange={e => setNewMuscle(e.target.value)}
+                aria-label="Muscle group"
+              >
+                <option value="">Muscle group (optional)</option>
+                {MUSCLE_GROUPS.map(g => <option key={g} value={g}>{g.charAt(0).toUpperCase() + g.slice(1)}</option>)}
+              </select>
+              <label style={s.newExCheckRow}>
+                <input
+                  type="checkbox"
+                  checked={newIsPT}
+                  onChange={e => setNewIsPT(e.target.checked)}
+                  aria-label="PT/rehab exercise"
+                />
+                PT / rehab exercise
+              </label>
+              <div style={s.newExActions}>
+                <button style={s.addLogBtn} onClick={addNewAndLog} disabled={addingNew || !newName.trim()}>
+                  {addingNew ? 'Adding...' : 'Add & Log'}
+                </button>
+                <button style={s.cancelLink} onClick={() => setShowNewForm(false)}>Cancel</button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <select style={s.picker} onChange={e => addExercise(e.target.value)} defaultValue="">
+                <option value="" disabled>Select exercise...</option>
+                {allExercises.map(ex => <option key={ex.id} value={ex.id}>{ex.name}</option>)}
+              </select>
+              <button style={s.cantFindLink} onClick={() => setShowNewForm(true)}>+ Can't find it? Add new</button>
+            </>
+          )}
+        </>
       ) : (
         <button style={s.addExBtn} onClick={() => setShowPicker(true)}>+ Add Exercise</button>
       )}

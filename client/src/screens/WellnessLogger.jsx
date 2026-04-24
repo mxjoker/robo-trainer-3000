@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../api/client'
 
@@ -31,7 +31,11 @@ const s = {
     fontSize: 14, fontWeight: 600, cursor: 'pointer'
   }),
   textarea: { background: '#252540', border: '1px solid #333', borderRadius: 8, padding: '10px 12px', color: '#fff', fontSize: 14, width: '100%', outline: 'none', resize: 'none', minHeight: 80 },
-  saveBtn: { background: '#7c6af7', border: 'none', borderRadius: 10, padding: 14, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', width: '100%', marginTop: 8 }
+  saveBtn: { background: '#7c6af7', border: 'none', borderRadius: 10, padding: 14, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', width: '100%', marginTop: 8 },
+  medsChipsRow: { display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 },
+  medChip: { display: 'flex', alignItems: 'center', gap: 4, background: '#252540', color: '#ccc', borderRadius: 20, padding: '4px 10px', fontSize: 12 },
+  medChipX: { background: 'none', border: 'none', color: '#888', cursor: 'pointer', fontSize: 14, padding: '0 2px', lineHeight: 1 },
+  medsInput: { background: '#252540', border: '1px solid #333', borderRadius: 8, padding: '9px 12px', color: '#fff', fontSize: 13, width: '100%', outline: 'none' },
 }
 
 export default function WellnessLogger() {
@@ -44,11 +48,43 @@ export default function WellnessLogger() {
   const [creatine, setCreatine] = useState(false)
   const [painAreas, setPainAreas] = useState([])
   const [notes, setNotes] = useState('')
+  const [meds, setMeds] = useState([])
+  const [medInput, setMedInput] = useState('')
   const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    api.get('/wellness/today').then(log => {
+      if (!log) return
+      if (log.pain_level != null) setPain(log.pain_level)
+      if (log.energy_level != null) setEnergy(log.energy_level)
+      if (log.mood != null) setMood(log.mood)
+      if (log.sleep_hours != null) setSleep(String(log.sleep_hours))
+      if (log.water_oz != null) setWater(String(log.water_oz))
+      if (log.creatine_taken != null) setCreatine(log.creatine_taken)
+      if (Array.isArray(log.pain_areas)) setPainAreas(log.pain_areas)
+      if (log.notes) setNotes(log.notes)
+      if (Array.isArray(log.meds_taken)) setMeds(log.meds_taken)
+    }).catch(() => {})
+  }, [])
 
   function toggleArea(area) {
     const lower = area.toLowerCase()
     setPainAreas(prev => prev.includes(lower) ? prev.filter(a => a !== lower) : [...prev, lower])
+  }
+
+  function handleMedKeyDown(e) {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault()
+      const val = medInput.trim().replace(/,$/, '')
+      if (val && !meds.includes(val)) {
+        setMeds(prev => [...prev, val])
+      }
+      setMedInput('')
+    }
+  }
+
+  function removeMed(med) {
+    setMeds(prev => prev.filter(m => m !== med))
   }
 
   async function save() {
@@ -63,7 +99,8 @@ export default function WellnessLogger() {
         water_oz: water ? Number(water) : null,
         creatine_taken: creatine,
         pain_areas: painAreas,
-        notes: notes || null
+        notes: notes || null,
+        meds_taken: meds
       })
       navigate('/')
     } catch (err) {
@@ -122,6 +159,26 @@ export default function WellnessLogger() {
         <button style={s.toggle(creatine)} onClick={() => setCreatine(v => !v)}>
           {creatine ? 'Yes — taken today' : 'No'}
         </button>
+      </div>
+
+      <div style={s.card}>
+        <label style={s.label}>Meds &amp; Supplements</label>
+        <div style={s.medsChipsRow}>
+          {meds.map(med => (
+            <span key={med} style={s.medChip}>
+              {med}
+              <button style={s.medChipX} onClick={() => removeMed(med)} aria-label={`Remove ${med}`}>×</button>
+            </span>
+          ))}
+        </div>
+        <input
+          style={s.medsInput}
+          value={medInput}
+          onChange={e => setMedInput(e.target.value)}
+          onKeyDown={handleMedKeyDown}
+          placeholder="Type med name, press Enter to add..."
+          aria-label="Add med or supplement"
+        />
       </div>
 
       <div style={s.card}>

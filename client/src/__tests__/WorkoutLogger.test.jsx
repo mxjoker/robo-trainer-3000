@@ -181,4 +181,49 @@ describe('WorkoutLogger', () => {
       expect(mockNavigate).toHaveBeenCalledWith('/')
     })
   })
+
+  it('clicking "Can\'t find it? Add new" shows the mini-form', async () => {
+    renderLogger()
+    await waitFor(() => expect(api.get).toHaveBeenCalledWith('/exercises'))
+
+    // Open picker
+    fireEvent.click(screen.getByText('+ Add Exercise'))
+    await waitFor(() => expect(screen.getByRole('combobox')).toBeInTheDocument())
+
+    // Click the "Can't find it?" link
+    fireEvent.click(screen.getByText("+ Can't find it? Add new"))
+
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText('Exercise name (required)')).toBeInTheDocument()
+      expect(screen.getByText('Add & Log')).toBeInTheDocument()
+    })
+  })
+
+  it('filling name and clicking "Add & Log" adds the exercise to the logged list', async () => {
+    const newExercise = { id: 99, name: 'Face Pull', muscle_group: 'shoulders', is_pt_exercise: false }
+    api.post
+      .mockResolvedValueOnce({ id: 42 })    // workout creation
+      .mockResolvedValueOnce(newExercise)    // POST /exercises
+
+    renderLogger()
+    await waitFor(() => expect(api.get).toHaveBeenCalledWith('/exercises'))
+
+    // Open picker then new form
+    fireEvent.click(screen.getByText('+ Add Exercise'))
+    await waitFor(() => expect(screen.getByRole('combobox')).toBeInTheDocument())
+    fireEvent.click(screen.getByText("+ Can't find it? Add new"))
+    await waitFor(() => expect(screen.getByPlaceholderText('Exercise name (required)')).toBeInTheDocument())
+
+    // Fill in name
+    fireEvent.change(screen.getByPlaceholderText('Exercise name (required)'), { target: { value: 'Face Pull' } })
+
+    // Click Add & Log
+    fireEvent.click(screen.getByText('Add & Log'))
+
+    await waitFor(() => {
+      expect(api.post).toHaveBeenCalledWith('/exercises', expect.objectContaining({ name: 'Face Pull' }))
+      // Exercise card should now appear in the logged list
+      expect(screen.getByText('Face Pull')).toBeInTheDocument()
+    })
+  })
 })

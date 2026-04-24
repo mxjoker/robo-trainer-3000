@@ -41,12 +41,12 @@ router.get('/', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const { date, pain_level, energy_level, mood, sleep_hours, water_oz,
-            creatine_taken, pain_areas, notes } = req.body
+            creatine_taken, pain_areas, notes, meds_taken = [] } = req.body
     const logDate = date || new Date().toISOString().split('T')[0]
     const result = await pool.query(
       `INSERT INTO wellness_logs
-         (user_id, date, pain_level, energy_level, mood, sleep_hours, water_oz, creatine_taken, pain_areas, notes)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+         (user_id, date, pain_level, energy_level, mood, sleep_hours, water_oz, creatine_taken, pain_areas, notes, meds_taken)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
        ON CONFLICT (user_id, date) DO UPDATE SET
          pain_level = EXCLUDED.pain_level,
          energy_level = EXCLUDED.energy_level,
@@ -55,12 +55,14 @@ router.post('/', async (req, res) => {
          water_oz = EXCLUDED.water_oz,
          creatine_taken = EXCLUDED.creatine_taken,
          pain_areas = EXCLUDED.pain_areas,
-         notes = EXCLUDED.notes
+         notes = EXCLUDED.notes,
+         meds_taken = EXCLUDED.meds_taken
        RETURNING *, (xmax = 0) AS inserted`,
       [req.user.id, logDate,
        pain_level ?? null, energy_level ?? null, mood ?? null,
        sleep_hours ?? null, water_oz ?? null,
-       creatine_taken ?? false, pain_areas ?? [], notes ?? null]
+       creatine_taken ?? false, pain_areas ?? [], notes ?? null,
+       meds_taken ?? []]
     )
     const { inserted, ...row } = result.rows[0]
     res.status(inserted ? 201 : 200).json(row)

@@ -27,5 +27,12 @@ module.exports = async function globalSetup() {
     'utf8'
   )
   await pool.query(sql)
+
+  const sql2 = fs.readFileSync(
+    path.join(__dirname, '../db/migrations/002_add_meds.sql'),
+    'utf8'
+  )
+  await pool.query(sql2)
+
   await pool.end()
 }
