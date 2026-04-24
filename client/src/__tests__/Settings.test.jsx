@@ -11,7 +11,17 @@ vi.mock('../context/AuthContext', () => ({
 vi.mock('../api/client', () => ({
   api: {
     post: vi.fn(),
+    get: vi.fn().mockResolvedValue({}),
+    put: vi.fn(),
+    delete: vi.fn(),
   }
+}))
+
+vi.mock('../services/pushService', () => ({
+  requestAndSubscribe: vi.fn(),
+  unsubscribe: vi.fn(),
+  isSupported: vi.fn(() => false),
+  currentPermission: vi.fn(() => 'default'),
 }))
 
 import { useAuth } from '../context/AuthContext'

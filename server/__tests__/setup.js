@@ -12,6 +12,8 @@ module.exports = async function globalSetup() {
 
   // Drop and recreate all tables cleanly
   await pool.query(`
+    DROP TABLE IF EXISTS push_subscriptions CASCADE;
+    DROP TABLE IF EXISTS notification_preferences CASCADE;
     DROP TABLE IF EXISTS sets CASCADE;
     DROP TABLE IF EXISTS workouts CASCADE;
     DROP TABLE IF EXISTS wellness_logs CASCADE;
@@ -33,6 +35,12 @@ module.exports = async function globalSetup() {
     'utf8'
   )
   await pool.query(sql2)
+
+  const sql3 = fs.readFileSync(
+    path.join(__dirname, '../db/migrations/003_add_push.sql'),
+    'utf8'
+  )
+  await pool.query(sql3)
 
   await pool.end()
 }

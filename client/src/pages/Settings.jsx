@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../api/client'
+import { requestAndSubscribe, isSupported, currentPermission } from '../services/pushService'
 
 const s = {
   page: { padding: '20px 16px 100px', maxWidth: 480, margin: '0 auto' },
@@ -13,7 +14,12 @@ const s = {
   btn: (color = '#7c6af7') => ({ width: '100%', padding: 13, background: color, border: 'none', borderRadius: 10, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', marginBottom: 8 }),
   inviteUrl: { background: '#252540', borderRadius: 8, padding: '10px 12px', fontSize: 12, color: '#a090ff', wordBreak: 'break-all', marginTop: 8 },
   row: { display: 'flex', gap: 8, marginBottom: 8 },
-  filterBtn: (active) => ({ padding: '6px 12px', borderRadius: 20, border: `1px solid ${active ? '#7c6af7' : '#333'}`, background: active ? '#7c6af722' : 'transparent', color: active ? '#a090ff' : '#666', fontSize: 11, cursor: 'pointer' })
+  filterBtn: (active) => ({ padding: '6px 12px', borderRadius: 20, border: `1px solid ${active ? '#7c6af7' : '#333'}`, background: active ? '#7c6af722' : 'transparent', color: active ? '#a090ff' : '#666', fontSize: 11, cursor: 'pointer' }),
+  toggle: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
+  toggleLabel: { fontSize: 14, color: '#ccc' },
+  toggleInput: { width: 44, height: 24, accentColor: '#7c6af7', cursor: 'pointer' },
+  numInput: { background: '#252540', border: '1px solid #333', borderRadius: 6, color: '#fff', padding: '4px 8px', width: 60, fontSize: 13 },
+  hint: { fontSize: 11, color: '#555', marginTop: -8, marginBottom: 10 },
 }
 
 export default function Settings() {
@@ -21,6 +27,43 @@ export default function Settings() {
   const [inviteUrl, setInviteUrl] = useState('')
   const [exportFormat, setExportFormat] = useState('csv')
   const [exporting, setExporting] = useState(false)
+  const [notifPrefs, setNotifPrefs] = useState({
+    water_enabled: false, water_interval_hours: 2, water_start_hour: 8, water_end_hour: 20,
+    creatine_enabled: false, creatine_hour: 8,
+    workout_enabled: false, workout_hour: 18,
+  })
+  const [notifSaving, setNotifSaving] = useState(false)
+  const [notifPermission, setNotifPermission] = useState(currentPermission())
+  const pushSupported = isSupported()
+
+  useEffect(() => {
+    api.get('/notifications/preferences').then(setNotifPrefs).catch(() => {})
+  }, [])
+
+  async function handleEnableNotifications() {
+    try {
+      await requestAndSubscribe()
+      setNotifPermission('granted')
+    } catch {
+      alert('Could not enable notifications. Please check your browser settings.')
+    }
+  }
+
+  async function saveNotifPrefs() {
+    setNotifSaving(true)
+    try {
+      const updated = await api.put('/notifications/preferences', notifPrefs)
+      setNotifPrefs(updated)
+    } catch {
+      alert('Failed to save notification preferences.')
+    } finally {
+      setNotifSaving(false)
+    }
+  }
+
+  function setNotif(key, value) {
+    setNotifPrefs(p => ({ ...p, [key]: value }))
+  }
 
   async function generateInvite() {
     try {
@@ -77,6 +120,61 @@ export default function Settings() {
                 Copy Link
               </button>
             </>
+          )}
+        </div>
+      )}
+
+      {pushSupported && (
+        <div style={s.section}>
+          <div style={s.sectionLabel}>Notifications</div>
+          {notifPermission !== 'granted' ? (
+            <button style={s.btn()} onClick={handleEnableNotifications}>Enable Notifications</button>
+          ) : (
+            <div style={s.card}>
+              <div style={s.toggle}>
+                <span style={s.toggleLabel}>Water reminders</span>
+                <input type="checkbox" style={s.toggleInput} checked={notifPrefs.water_enabled} onChange={e => setNotif('water_enabled', e.target.checked)} />
+              </div>
+              {notifPrefs.water_enabled && (
+                <>
+                  <div style={{ ...s.toggle, marginBottom: 4 }}>
+                    <span style={{ fontSize: 12, color: '#888' }}>Every</span>
+                    <input type="number" min={1} max={8} style={s.numInput} value={notifPrefs.water_interval_hours} onChange={e => setNotif('water_interval_hours', Number(e.target.value))} />
+                    <span style={{ fontSize: 12, color: '#888' }}>hrs between</span>
+                    <input type="number" min={0} max={23} style={s.numInput} value={notifPrefs.water_start_hour} onChange={e => setNotif('water_start_hour', Number(e.target.value))} />
+                    <span style={{ fontSize: 12, color: '#888' }}>–</span>
+                    <input type="number" min={0} max={23} style={s.numInput} value={notifPrefs.water_end_hour} onChange={e => setNotif('water_end_hour', Number(e.target.value))} />
+                  </div>
+                  <div style={s.hint}>Hours use 24h format (e.g. 20 = 8pm)</div>
+                </>
+              )}
+
+              <div style={s.toggle}>
+                <span style={s.toggleLabel}>Creatine reminder</span>
+                <input type="checkbox" style={s.toggleInput} checked={notifPrefs.creatine_enabled} onChange={e => setNotif('creatine_enabled', e.target.checked)} />
+              </div>
+              {notifPrefs.creatine_enabled && (
+                <div style={{ ...s.toggle, marginBottom: 12 }}>
+                  <span style={{ fontSize: 12, color: '#888' }}>Daily at hour</span>
+                  <input type="number" min={0} max={23} style={s.numInput} value={notifPrefs.creatine_hour} onChange={e => setNotif('creatine_hour', Number(e.target.value))} />
+                </div>
+              )}
+
+              <div style={s.toggle}>
+                <span style={s.toggleLabel}>Workout reminder</span>
+                <input type="checkbox" style={s.toggleInput} checked={notifPrefs.workout_enabled} onChange={e => setNotif('workout_enabled', e.target.checked)} />
+              </div>
+              {notifPrefs.workout_enabled && (
+                <div style={{ ...s.toggle, marginBottom: 12 }}>
+                  <span style={{ fontSize: 12, color: '#888' }}>If no workout by hour</span>
+                  <input type="number" min={0} max={23} style={s.numInput} value={notifPrefs.workout_hour} onChange={e => setNotif('workout_hour', Number(e.target.value))} />
+                </div>
+              )}
+
+              <button style={s.btn()} onClick={saveNotifPrefs} disabled={notifSaving}>
+                {notifSaving ? 'Saving...' : 'Save Reminders'}
+              </button>
+            </div>
           )}
         </div>
       )}
