@@ -55,6 +55,11 @@ function buildDayMap(workouts, wellnessList) {
   return map
 }
 
+function thirtyDaysAgo() {
+  const d = new Date(); d.setDate(d.getDate() - 30)
+  return d.toISOString().split('T')[0]
+}
+
 export default function Dashboard() {
   const { currentUser } = useAuth()
   const navigate = useNavigate()
@@ -116,11 +121,6 @@ export default function Dashboard() {
       .finally(() => setCalLoading(false))
   }, [currentMonth])
 
-  function thirtyDaysAgo() {
-    const d = new Date(); d.setDate(d.getDate() - 30)
-    return d.toISOString().split('T')[0]
-  }
-
   const workoutDateSet = new Set(consistency?.workout_dates || [])
   const sparkData = strengthHistory.map(h => ({ value: h.max_weight_lbs, label: h.date }))
   const topPR = topExercise ? Number(topExercise.max_weight_lbs) : null
@@ -143,7 +143,7 @@ export default function Dashboard() {
       <div style={s.todayRow}>
         <div style={s.todayCell}>
           <div style={s.cellLabel}>Workout</div>
-          {workoutDateSet.has(new Date().toISOString().split('T')[0])
+          {workoutDateSet.has(now.toISOString().split('T')[0])
             ? <div style={s.cellValue('#4caf8a')}>Done</div>
             : <div style={s.cellValue('#555')}>—</div>}
         </div>
