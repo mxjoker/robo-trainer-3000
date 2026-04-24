@@ -1,9 +1,3 @@
-databases:
-  - name: robo-trainer-db
-    plan: free
-    databaseName: robo_trainer
-    user: robo_trainer
-
 services:
   - type: web
     name: robo-trainer-api
@@ -16,9 +10,7 @@ services:
       - key: NODE_ENV
         value: production
       - key: DATABASE_URL
-        fromDatabase:
-          name: robo-trainer-db
-          property: connectionString
+        sync: false   # set manually in Render dashboard — points to Neon
       - key: JWT_SECRET
         sync: false   # set manually in Render dashboard
       - key: CLIENT_ORIGIN
