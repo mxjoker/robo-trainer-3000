@@ -154,4 +154,38 @@ describe('CalendarGrid', () => {
     fireEvent.click(screen.getByTestId('next-month-btn'))
     expect(onMonthChange).toHaveBeenCalledWith({ year: 2027, month: 0 })
   })
+
+  it('applies purple ring and text color to today\'s cell', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-04-15T12:00:00'))
+    render(
+      <CalendarGrid
+        dayMap={{}}
+        currentMonth={{ year: 2026, month: 3 }}
+        onDaySelect={() => {}}
+        onMonthChange={() => {}}
+        loading={false}
+      />
+    )
+    const cell = screen.getByTestId('day-cell-2026-04-15')
+    expect(cell.style.border).toBe('1px solid rgb(124, 106, 247)')
+    vi.useRealTimers()
+  })
+
+  it('renders future day cells at 40% opacity', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-04-15T12:00:00'))
+    render(
+      <CalendarGrid
+        dayMap={{}}
+        currentMonth={{ year: 2026, month: 3 }}
+        onDaySelect={() => {}}
+        onMonthChange={() => {}}
+        loading={false}
+      />
+    )
+    const futureCell = screen.getByTestId('day-cell-2026-04-20')
+    expect(futureCell.style.opacity).toBe('0.4')
+    vi.useRealTimers()
+  })
 })
