@@ -124,10 +124,11 @@ export default function Settings() {
         </div>
       )}
 
-      {pushSupported && (
-        <div style={s.section}>
+      <div style={s.section}>
           <div style={s.sectionLabel}>Notifications</div>
-          {notifPermission !== 'granted' ? (
+          {!pushSupported ? (
+            <div style={{ fontSize: 12, color: '#555' }}>Not supported on this device/browser</div>
+          ) : notifPermission !== 'granted' ? (
             <button style={s.btn()} onClick={handleEnableNotifications}>Enable Notifications</button>
           ) : (
             <div style={s.card}>
@@ -177,7 +178,6 @@ export default function Settings() {
             </div>
           )}
         </div>
-      )}
 
       <div style={s.section}>
         <div style={s.sectionLabel}>Export Data</div>
