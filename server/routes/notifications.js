@@ -64,8 +64,7 @@ router.get('/preferences', async (req, res) => {
 })
 
 // PUT /api/notifications/preferences
-router.put('/preferences', async (req, res, next) => {
-  console.log('PUT /notifications/preferences hit', req.user?.id)
+router.put('/preferences', async (req, res) => {
   const {
     water_enabled, water_interval_hours, water_start_hour, water_end_hour,
     creatine_enabled, creatine_hour,
@@ -97,8 +96,7 @@ router.put('/preferences', async (req, res, next) => {
     )
     res.json(result.rows[0])
   } catch (err) {
-    console.error('PUT /notifications/preferences error:', err.message)
-    next(err)
+    res.status(500).json({ error: err.message || 'Internal server error' })
   }
 })
 

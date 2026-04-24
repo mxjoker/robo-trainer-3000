@@ -14,18 +14,11 @@ const { router: notificationsRoutes } = require('./routes/notifications')
 
 const app = express()
 
-app.use((req, res, next) => {
-  console.log(req.method, req.path, req.headers.authorization ? 'auth:yes' : 'auth:no')
-  next()
-})
-
 app.use(cors({
   origin: process.env.CLIENT_ORIGIN || 'http://localhost:5173',
   credentials: true,
 }))
 app.use(express.json())
-
-app.get('/api/ping', (req, res) => res.json({ version: 'v2-notifications', routes: ['notifications'] }))
 
 app.use('/api/auth', authRoutes)
 app.use('/api/exercises', exercisesRoutes)
