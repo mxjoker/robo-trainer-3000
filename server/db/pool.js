@@ -10,6 +10,9 @@ if (!connectionString) {
   )
 }
 
-const pool = new Pool({ connectionString })
+const pool = new Pool({
+  connectionString,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+})
 
 module.exports = { pool }
