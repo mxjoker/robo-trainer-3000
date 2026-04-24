@@ -5,6 +5,8 @@ import { api } from '../api/client'
 import StatCard from '../components/StatCard'
 import SparkBar from '../components/SparkBar'
 import DualLineChart from '../components/DualLineChart'
+import CalendarGrid from '../components/CalendarGrid'
+import DaySheet from '../components/DaySheet'
 
 const s = {
   page: { padding: '20px 16px 100px', maxWidth: 480, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 12 },
@@ -22,22 +24,46 @@ const s = {
   legendRow: { display: 'flex', gap: 14, marginTop: 8 },
   legendItem: { display: 'flex', alignItems: 'center', gap: 5, fontSize: 10, color: '#666' },
   legendLine: (color) => ({ width: 12, height: 2, background: color, borderRadius: 1 }),
-  calGrid: { display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 3, marginBottom: 8 },
-  calDot: (type) => ({
-    aspectRatio: '1', borderRadius: 3,
-    background: type === 'workout' ? '#4caf8a' : type === 'rest' ? '#f7a76c' : '#1f1f30',
-    opacity: type === 'workout' ? 0.8 : type === 'rest' ? 0.6 : 1
-  }),
   partnerSub: { fontSize: 11, color: '#888', marginTop: 2 },
-  partnerMeta: { fontSize: 10, color: '#555', marginTop: 3 }
+  partnerMeta: { fontSize: 10, color: '#555', marginTop: 3 },
+  calError: { fontSize: 12, color: '#f7a76c', display: 'flex', alignItems: 'center', gap: 8 },
+  retryBtn: { background: 'none', border: '1px solid #f7a76c', borderRadius: 6, color: '#f7a76c', fontSize: 11, padding: '3px 8px', cursor: 'pointer' },
 }
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December']
 
+function monthRange(year, month) {
+  const mm = String(month + 1).padStart(2, '0')
+  const lastDay = new Date(year, month + 1, 0).getDate()
+  return {
+    start: `${year}-${mm}-01`,
+    end: `${year}-${mm}-${String(lastDay).padStart(2, '0')}`,
+  }
+}
+
+function buildDayMap(workouts, wellnessList) {
+  const map = {}
+  for (const w of workouts) {
+    const key = w.date.split('T')[0]
+    map[key] = { ...map[key], workout: w }
+  }
+  for (const wl of wellnessList) {
+    const key = wl.date.split('T')[0]
+    map[key] = { ...map[key], wellness: wl }
+  }
+  return map
+}
+
 export default function Dashboard() {
   const { currentUser } = useAuth()
   const navigate = useNavigate()
+
+  const now = new Date()
+  const dayName = DAYS[now.getDay()]
+  const dateStr = `${MONTHS[now.getMonth()]} ${now.getDate()}`
+
+  // Stats + partner state
   const [consistency, setConsistency] = useState(null)
   const [healthData, setHealthData] = useState([])
   const [todayWellness, setTodayWellness] = useState(null)
@@ -46,10 +72,14 @@ export default function Dashboard() {
   const [topExercise, setTopExercise] = useState(null)
   const [partnerData, setPartnerData] = useState(null)
 
-  const now = new Date()
-  const dayName = DAYS[now.getDay()]
-  const dateStr = `${MONTHS[now.getMonth()]} ${now.getDate()}`
+  // Calendar state
+  const [currentMonth, setCurrentMonth] = useState({ year: now.getFullYear(), month: now.getMonth() })
+  const [dayMap, setDayMap] = useState({})
+  const [calLoading, setCalLoading] = useState(false)
+  const [calError, setCalError] = useState(null)
+  const [selectedDate, setSelectedDate] = useState(null)
 
+  // Stats + partner fetch (unchanged)
   useEffect(() => {
     api.get('/stats/consistency').then(setConsistency).catch(() => {})
     api.get('/stats/health?start=' + thirtyDaysAgo()).then(data => setHealthData(data.slice(-30))).catch(() => {})
@@ -72,21 +102,26 @@ export default function Dashboard() {
     }).catch(() => {})
   }, [])
 
+  // Calendar fetch — re-runs whenever currentMonth changes
+  useEffect(() => {
+    const { start, end } = monthRange(currentMonth.year, currentMonth.month)
+    setCalLoading(true)
+    setCalError(null)
+    Promise.all([
+      api.get(`/workouts?start=${start}&end=${end}`),
+      api.get(`/wellness?start=${start}&end=${end}`),
+    ])
+      .then(([workouts, wellnessList]) => setDayMap(buildDayMap(workouts, wellnessList)))
+      .catch(() => setCalError('Failed to load calendar data'))
+      .finally(() => setCalLoading(false))
+  }, [currentMonth])
+
   function thirtyDaysAgo() {
     const d = new Date(); d.setDate(d.getDate() - 30)
     return d.toISOString().split('T')[0]
   }
 
-  // Build calendar dots for current month
   const workoutDateSet = new Set(consistency?.workout_dates || [])
-  const calDots = []
-  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
-  for (let d = 1; d <= daysInMonth; d++) {
-    const dotDateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2,'0')}-${String(d).padStart(2,'0')}`
-    const isToday = d === now.getDate()
-    calDots.push(workoutDateSet.has(dotDateStr) ? 'workout' : isToday ? 'today' : d < now.getDate() ? 'rest' : 'future')
-  }
-
   const sparkData = strengthHistory.map(h => ({ value: h.max_weight_lbs, label: h.date }))
   const topPR = topExercise ? Number(topExercise.max_weight_lbs) : null
 
@@ -148,19 +183,22 @@ export default function Dashboard() {
         </div>
       </StatCard>
 
-      {/* Consistency */}
-      <StatCard title={MONTHS[now.getMonth()]} linkLabel="Calendar" onLink={() => navigate('/stats')}>
-        <div style={s.calGrid}>
-          {calDots.map((type, i) => <div key={i} style={s.calDot(type)} />)}
-        </div>
-        <div style={{ display: 'flex', gap: 12 }}>
-          {[['#4caf8a', 'Workout'], ['#f7a76c', 'Rest']].map(([color, label]) => (
-            <div key={label} style={s.legendItem}>
-              <div style={{ width: 8, height: 8, background: color, borderRadius: 2, opacity: 0.8 }} />
-              {label}
-            </div>
-          ))}
-        </div>
+      {/* Full calendar */}
+      <StatCard title={`${MONTHS[currentMonth.month]} ${currentMonth.year}`}>
+        {calError ? (
+          <div style={s.calError}>
+            {calError}
+            <button style={s.retryBtn} onClick={() => setCurrentMonth({ ...currentMonth })}>Retry</button>
+          </div>
+        ) : (
+          <CalendarGrid
+            dayMap={dayMap}
+            currentMonth={currentMonth}
+            onDaySelect={setSelectedDate}
+            onMonthChange={setCurrentMonth}
+            loading={calLoading}
+          />
+        )}
       </StatCard>
 
       {/* Partner card */}
@@ -176,6 +214,15 @@ export default function Dashboard() {
           )}
         </StatCard>
       )}
+
+      {/* Day detail sheet */}
+      <DaySheet
+        date={selectedDate}
+        data={selectedDate ? dayMap[selectedDate] : undefined}
+        onClose={() => setSelectedDate(null)}
+        onLogWorkout={() => { setSelectedDate(null); navigate('/log/workout') }}
+        onLogWellness={() => { setSelectedDate(null); navigate('/log/wellness') }}
+      />
     </div>
   )
 }

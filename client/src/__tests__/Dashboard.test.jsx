@@ -54,8 +54,9 @@ describe('Dashboard', () => {
 
     await waitFor(() => {
       expect(screen.getByText(dayName)).toBeInTheDocument()
-      // Month name appears in the consistency StatCard title
-      expect(screen.getAllByText(monthName).length).toBeGreaterThan(0)
+      // StatCard title is now "April 2026"
+      const now = new Date()
+      expect(screen.getByText(`${monthName} ${now.getFullYear()}`)).toBeInTheDocument()
     })
   })
 
@@ -135,6 +136,33 @@ describe('Dashboard', () => {
     // Wait for async effects to settle; partner card should not be shown
     await waitFor(() => {
       expect(screen.queryByText('Bob')).not.toBeInTheDocument()
+    })
+  })
+
+  it('fetches calendar data for the current month and renders workout dot', async () => {
+    const now = new Date()
+    const todayDate = now.toISOString().split('T')[0]
+
+    api.get.mockImplementation((path) => {
+      if (path.startsWith('/workouts?')) {
+        return Promise.resolve([{
+          id: 1,
+          date: todayDate,
+          notes: 'Leg day',
+          duration_minutes: 60,
+          sets: [{ exercise_name: 'Squat' }]
+        }])
+      }
+      if (path.startsWith('/wellness?')) {
+        return Promise.resolve([])
+      }
+      return Promise.reject(new Error('not found'))
+    })
+
+    renderDashboard()
+
+    await waitFor(() => {
+      expect(screen.getByTestId(`workout-dot-${todayDate}`)).toBeInTheDocument()
     })
   })
 
