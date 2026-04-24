@@ -64,36 +64,42 @@ router.get('/preferences', async (req, res) => {
 })
 
 // PUT /api/notifications/preferences
-router.put('/preferences', async (req, res) => {
+router.put('/preferences', async (req, res, next) => {
+  console.log('PUT /notifications/preferences hit', req.user?.id)
   const {
     water_enabled, water_interval_hours, water_start_hour, water_end_hour,
     creatine_enabled, creatine_hour,
     workout_enabled, workout_hour
   } = req.body
 
-  const result = await pool.query(
-    `INSERT INTO notification_preferences
-       (user_id, water_enabled, water_interval_hours, water_start_hour, water_end_hour,
-        creatine_enabled, creatine_hour, workout_enabled, workout_hour, updated_at)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,NOW())
-     ON CONFLICT (user_id) DO UPDATE SET
-       water_enabled = COALESCE($2, notification_preferences.water_enabled),
-       water_interval_hours = COALESCE($3, notification_preferences.water_interval_hours),
-       water_start_hour = COALESCE($4, notification_preferences.water_start_hour),
-       water_end_hour = COALESCE($5, notification_preferences.water_end_hour),
-       creatine_enabled = COALESCE($6, notification_preferences.creatine_enabled),
-       creatine_hour = COALESCE($7, notification_preferences.creatine_hour),
-       workout_enabled = COALESCE($8, notification_preferences.workout_enabled),
-       workout_hour = COALESCE($9, notification_preferences.workout_hour),
-       updated_at = NOW()
-     RETURNING *`,
-    [req.user.id,
-     water_enabled ?? null, water_interval_hours ?? null,
-     water_start_hour ?? null, water_end_hour ?? null,
-     creatine_enabled ?? null, creatine_hour ?? null,
-     workout_enabled ?? null, workout_hour ?? null]
-  )
-  res.json(result.rows[0])
+  try {
+    const result = await pool.query(
+      `INSERT INTO notification_preferences
+         (user_id, water_enabled, water_interval_hours, water_start_hour, water_end_hour,
+          creatine_enabled, creatine_hour, workout_enabled, workout_hour, updated_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,NOW())
+       ON CONFLICT (user_id) DO UPDATE SET
+         water_enabled = COALESCE($2, notification_preferences.water_enabled),
+         water_interval_hours = COALESCE($3, notification_preferences.water_interval_hours),
+         water_start_hour = COALESCE($4, notification_preferences.water_start_hour),
+         water_end_hour = COALESCE($5, notification_preferences.water_end_hour),
+         creatine_enabled = COALESCE($6, notification_preferences.creatine_enabled),
+         creatine_hour = COALESCE($7, notification_preferences.creatine_hour),
+         workout_enabled = COALESCE($8, notification_preferences.workout_enabled),
+         workout_hour = COALESCE($9, notification_preferences.workout_hour),
+         updated_at = NOW()
+       RETURNING *`,
+      [req.user.id,
+       water_enabled ?? null, water_interval_hours ?? null,
+       water_start_hour ?? null, water_end_hour ?? null,
+       creatine_enabled ?? null, creatine_hour ?? null,
+       workout_enabled ?? null, workout_hour ?? null]
+    )
+    res.json(result.rows[0])
+  } catch (err) {
+    console.error('PUT /notifications/preferences error:', err.message)
+    next(err)
+  }
 })
 
 module.exports = { router, webpush }
