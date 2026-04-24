@@ -93,6 +93,7 @@ describe('DaySheet', () => {
     expect(screen.getByText('2')).toBeInTheDocument()  // pain
     expect(screen.getByText(/7.5h/)).toBeInTheDocument()
     expect(screen.getByText(/Creatine ✓/)).toBeInTheDocument()
+    expect(screen.getByText(/Water ✓/)).toBeInTheDocument()
   })
 
   it('calls onClose when the backdrop is clicked', () => {

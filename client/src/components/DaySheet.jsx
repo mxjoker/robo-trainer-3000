@@ -11,9 +11,7 @@ export default function DaySheet({ date, data, onClose, onLogWorkout, onLogWelln
   const wellness = data?.wellness
   const isEmpty = !workout && !wellness
 
-  const exerciseNames = workout
-    ? [...new Set(workout.sets.map(s => s.exercise_name))]
-    : []
+  const exerciseNames = [...new Set((workout?.sets ?? []).map(s => s.exercise_name))]
 
   return (
     <>
@@ -78,7 +76,7 @@ export default function DaySheet({ date, data, onClose, onLogWorkout, onLogWelln
                 </div>
                 <div style={{ fontSize: 12, color: '#666', lineHeight: 1.8 }}>
                   {wellness.sleep_hours != null && <span>Sleep {wellness.sleep_hours}h · </span>}
-                  <span>Water {wellness.water_oz > 0 ? '✓' : '✗'} · </span>
+                  {wellness.water_oz != null && <span>Water {wellness.water_oz > 0 ? '✓' : '✗'} · </span>}
                   <span>Creatine {wellness.creatine_taken ? '✓' : '✗'}</span>
                 </div>
               </div>
