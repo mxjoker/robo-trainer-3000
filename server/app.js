@@ -25,6 +25,8 @@ app.use(cors({
 }))
 app.use(express.json())
 
+app.get('/api/ping', (req, res) => res.json({ version: 'v2-notifications', routes: ['notifications'] }))
+
 app.use('/api/auth', authRoutes)
 app.use('/api/exercises', exercisesRoutes)
 app.use('/api/routines', routinesRoutes)
