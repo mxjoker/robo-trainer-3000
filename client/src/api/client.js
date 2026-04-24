@@ -1,6 +1,8 @@
 import { enqueue, flushQueue } from '../offline/queue'
 
-const BASE = '/api'
+// In production, VITE_API_URL is the full Render backend URL e.g. https://robo-trainer-api.onrender.com/api
+// In dev, it's unset and calls go through Vite's proxy as /api/...
+const BASE = import.meta.env.VITE_API_URL ?? '/api'
 
 function getToken() {
   return localStorage.getItem('rt_token')
