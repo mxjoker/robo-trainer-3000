@@ -4,9 +4,9 @@ import { NetworkFirst } from 'workbox-strategies'
 
 precacheAndRoute(self.__WB_MANIFEST)
 
-// Network-first for API calls
+// Network-first for API GET calls only — POST/PUT/DELETE pass through unmodified
 registerRoute(
-  ({ url }) => url.pathname.startsWith('/api/'),
+  ({ request, url }) => request.method === 'GET' && url.pathname.startsWith('/api/'),
   new NetworkFirst({ cacheName: 'api-cache', networkTimeoutSeconds: 5 })
 )
 
