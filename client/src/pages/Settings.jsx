@@ -55,7 +55,7 @@ export default function Settings() {
       const updated = await api.put('/notifications/preferences', notifPrefs)
       setNotifPrefs(updated)
     } catch (err) {
-      alert('Failed to save: ' + (err?.message || JSON.stringify(err)))
+      alert('Failed to save: ' + (err?.message || JSON.stringify(err)) + ' status:' + err?.status)
     } finally {
       setNotifSaving(false)
     }
