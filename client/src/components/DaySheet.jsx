@@ -57,6 +57,11 @@ export default function DaySheet({ date, data, onClose, onLogWorkout, onLogWelln
                     {exerciseNames.join(' · ')}
                   </div>
                 )}
+                {workout.mobility_sets?.length > 0 && (
+                  <div style={{ color: '#4db6f7', fontSize: 12, marginTop: 4 }}>
+                    Mobility: {workout.mobility_sets.map(ms => ms.exercise_name).join(' · ')}
+                  </div>
+                )}
               </div>
             )}
             {wellness && (

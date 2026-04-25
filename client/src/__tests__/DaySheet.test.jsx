@@ -104,4 +104,36 @@ describe('DaySheet', () => {
     fireEvent.click(screen.getByTestId('day-sheet-backdrop'))
     expect(onClose).toHaveBeenCalledTimes(1)
   })
+
+  it('shows mobility exercises in workout card when present', () => {
+    const workoutWithMobility = {
+      id: 1,
+      notes: 'Push Day',
+      duration_minutes: 45,
+      sets: [{ exercise_name: 'Bench Press' }],
+      mobility_sets: [
+        { id: 1, exercise_name: 'Hip Flexor Stretch', duration_seconds: 45 },
+        { id: 2, exercise_name: 'Pigeon Pose', duration_seconds: 60 },
+      ]
+    }
+    render(
+      <DaySheet date="2026-04-21" data={{ workout: workoutWithMobility }} onClose={() => {}} onLogWorkout={() => {}} onLogWellness={() => {}} />
+    )
+    expect(screen.getByText(/Hip Flexor Stretch/)).toBeInTheDocument()
+    expect(screen.getByText(/Pigeon Pose/)).toBeInTheDocument()
+  })
+
+  it('does not show mobility line when mobility_sets is empty', () => {
+    const workoutNoMobility = {
+      id: 1,
+      notes: 'Push Day',
+      duration_minutes: 45,
+      sets: [{ exercise_name: 'Bench Press' }],
+      mobility_sets: []
+    }
+    render(
+      <DaySheet date="2026-04-21" data={{ workout: workoutNoMobility }} onClose={() => {}} onLogWorkout={() => {}} onLogWellness={() => {}} />
+    )
+    expect(screen.queryByText(/Mobility:/)).not.toBeInTheDocument()
+  })
 })
