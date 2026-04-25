@@ -53,6 +53,11 @@ export default function WorkoutLogger() {
 
   // Each entry: { exerciseId, exerciseName, sets: [{ weight, reps, confirmed }] }
   const [loggedExercises, setLoggedExercises] = useState([])
+  const [mobilityExpanded, setMobilityExpanded] = useState(false)
+  const [mobilitySets, setMobilitySets] = useState([])
+  const [mobilityPickerExId, setMobilityPickerExId] = useState('')
+  const [mobilityDurationInput, setMobilityDurationInput] = useState('')
+  const [workoutNotes, setWorkoutNotes] = useState('')
 
   useEffect(() => {
     api.get('/exercises').then(setAllExercises)
@@ -119,6 +124,42 @@ export default function WorkoutLogger() {
       const newSets = isLast ? [...sets, makeSet(sets[setIdx])] : sets
       return { ...ex, sets: newSets }
     }))
+  }
+
+  async function addMobilitySet() {
+    if (!mobilityPickerExId || !mobilityDurationInput || !workoutId) return
+    const ex = allExercises.find(e => e.id === Number(mobilityPickerExId))
+    if (!ex) return
+    try {
+      const result = await api.post(`/workouts/${workoutId}/mobility`, {
+        exercise_id: ex.id,
+        duration_seconds: Number(mobilityDurationInput),
+        sort_order: mobilitySets.length,
+      })
+      setMobilitySets(prev => [...prev, result])
+      setMobilityPickerExId('')
+      setMobilityDurationInput('')
+    } catch (err) {
+      alert('Error adding mobility exercise: ' + err.message)
+    }
+  }
+
+  async function removeMobilitySet(setId) {
+    try {
+      await api.delete(`/workouts/${workoutId}/mobility/${setId}`)
+      setMobilitySets(prev => prev.filter(s => s.id !== setId))
+    } catch (err) {
+      alert('Error removing mobility exercise: ' + err.message)
+    }
+  }
+
+  async function saveNotes() {
+    if (!workoutId || workoutNotes === '') return
+    try {
+      await api.put(`/workouts/${workoutId}`, { notes: workoutNotes })
+    } catch {
+      // silent fail — notes are non-critical
+    }
   }
 
   async function finish() {
@@ -239,6 +280,72 @@ export default function WorkoutLogger() {
         </>
       ) : (
         <button style={s.addExBtn} onClick={() => setShowPicker(true)}>+ Add Exercise</button>
+      )}
+
+      {!mobilityExpanded ? (
+        <button
+          data-testid="mobility-expand-btn"
+          style={{ background: 'none', border: '1px dashed #333', borderRadius: 10, padding: 12, color: '#555', fontSize: 13, cursor: 'pointer', width: '100%', marginBottom: 12 }}
+          onClick={() => setMobilityExpanded(true)}
+        >
+          ＋ Add Mobility / Stretching
+        </button>
+      ) : (
+        <div style={{ background: '#1a1a2e', borderRadius: 10, padding: 14, marginBottom: 12 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: '#4db6f7', marginBottom: 12 }}>Mobility &amp; Stretching</div>
+          {mobilitySets.map(ms => (
+            <div key={ms.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+              <span style={{ fontSize: 13, color: '#ccc' }}>{ms.exercise_name}</span>
+              <span style={{ fontSize: 13, color: '#888' }}>
+                {ms.duration_seconds}s
+                <button
+                  style={{ background: 'none', border: 'none', color: '#555', cursor: 'pointer', marginLeft: 8, fontSize: 16, lineHeight: 1 }}
+                  onClick={() => removeMobilitySet(ms.id)}
+                  aria-label={`Remove ${ms.exercise_name}`}
+                >×</button>
+              </span>
+            </div>
+          ))}
+          <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+            <select
+              style={{ ...s.exercisePicker, flex: 1, marginBottom: 0 }}
+              value={mobilityPickerExId}
+              onChange={e => setMobilityPickerExId(e.target.value)}
+              aria-label="Mobility exercise"
+            >
+              <option value="" disabled>Pick exercise…</option>
+              {allExercises.map(ex => (
+                <option key={ex.id} value={ex.id}>{ex.name}</option>
+              ))}
+            </select>
+            <input
+              style={{ ...s.input, width: 70 }}
+              type="number"
+              inputMode="numeric"
+              value={mobilityDurationInput}
+              onChange={e => setMobilityDurationInput(e.target.value)}
+              placeholder="sec"
+              aria-label="Duration in seconds"
+            />
+            <button
+              data-testid="add-mobility-btn"
+              style={{ background: '#7c6af7', border: 'none', borderRadius: 8, padding: '8px 14px', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+              onClick={addMobilitySet}
+              disabled={!mobilityPickerExId || !mobilityDurationInput}
+            >Add</button>
+          </div>
+          <div>
+            <div style={{ fontSize: 10, textTransform: 'uppercase', color: '#555', letterSpacing: '0.5px', marginBottom: 6 }}>Notes (optional)</div>
+            <textarea
+              style={{ background: '#252540', border: '1px solid #333', borderRadius: 8, padding: '10px 12px', color: '#fff', fontSize: 13, width: '100%', outline: 'none', resize: 'none', minHeight: 60 }}
+              value={workoutNotes}
+              onChange={e => setWorkoutNotes(e.target.value)}
+              onBlur={saveNotes}
+              placeholder="How did it feel?"
+              aria-label="Workout notes"
+            />
+          </div>
+        </div>
       )}
 
       <button style={s.finishBtn} onClick={finish} disabled={saving}>
