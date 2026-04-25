@@ -68,7 +68,7 @@ export default function Partner() {
       {workouts.length === 0 && <div style={s.meta}>No workouts yet</div>}
       {workouts.map(w => (
         <div key={w.id} style={s.card}>
-          <div style={s.workoutHeader}>{new Date(w.date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</div>
+          <div style={s.workoutHeader}>{new Date(w.date.slice(0, 10) + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</div>
           {w.notes && <div style={s.meta}>{w.notes}</div>}
           {w.sets && [...new Set(w.sets.map(set => set.exercise_id))].map(exId => {
             const exSets = w.sets.filter(set => set.exercise_id === exId)
