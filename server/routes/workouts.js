@@ -14,7 +14,13 @@ async function getWorkoutWithSets(workoutId) {
      WHERE s.workout_id = $1 ORDER BY s.set_number`,
     [workoutId]
   )).rows
-  return { ...workout, sets }
+  const mobilitySets = (await pool.query(
+    `SELECT ms.*, e.name as exercise_name
+     FROM mobility_sets ms JOIN exercises e ON e.id = ms.exercise_id
+     WHERE ms.workout_id = $1 ORDER BY ms.sort_order`,
+    [workoutId]
+  )).rows
+  return { ...workout, sets, mobility_sets: mobilitySets }
 }
 
 // GET /api/workouts
@@ -74,6 +80,30 @@ router.post('/:id/sets', async (req, res) => {
   }
 })
 
+// POST /api/workouts/:id/mobility
+router.post('/:id/mobility', async (req, res) => {
+  try {
+    const { exercise_id, duration_seconds, sort_order = 0 } = req.body
+    if (!exercise_id || duration_seconds == null) {
+      return res.status(400).json({ error: 'exercise_id and duration_seconds are required' })
+    }
+    const workout = (await pool.query(
+      'SELECT * FROM workouts WHERE id = $1 AND user_id = $2', [req.params.id, req.user.id]
+    )).rows[0]
+    if (!workout) return res.status(404).json({ error: 'Workout not found' })
+    const result = await pool.query(
+      `INSERT INTO mobility_sets (workout_id, exercise_id, sort_order, duration_seconds)
+       VALUES ($1, $2, $3, $4) RETURNING *`,
+      [workout.id, exercise_id, sort_order, duration_seconds]
+    )
+    const ex = (await pool.query('SELECT name FROM exercises WHERE id = $1', [exercise_id])).rows[0]
+    res.status(201).json({ ...result.rows[0], exercise_name: ex?.name })
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ error: 'Server error' })
+  }
+})
+
 // PUT /api/workouts/sets/:id  — must be BEFORE PUT /:id
 router.put('/sets/:id', async (req, res) => {
   try {
@@ -110,6 +140,24 @@ router.delete('/sets/:id', async (req, res) => {
     )
     if (!check.rows[0]) return res.status(404).json({ error: 'Set not found' })
     await pool.query('DELETE FROM sets WHERE id = $1', [req.params.id])
+    res.status(204).send()
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ error: 'Server error' })
+  }
+})
+
+// DELETE /api/workouts/:id/mobility/:setId
+router.delete('/:id/mobility/:setId', async (req, res) => {
+  try {
+    const check = await pool.query(
+      `SELECT ms.id FROM mobility_sets ms
+       JOIN workouts w ON w.id = ms.workout_id
+       WHERE ms.id = $1 AND w.user_id = $2`,
+      [req.params.setId, req.user.id]
+    )
+    if (!check.rows[0]) return res.status(404).json({ error: 'Mobility set not found' })
+    await pool.query('DELETE FROM mobility_sets WHERE id = $1', [req.params.setId])
     res.status(204).send()
   } catch (err) {
     console.error(err)
