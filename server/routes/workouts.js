@@ -51,7 +51,7 @@ router.post('/', async (req, res) => {
       [req.user.id, date || new Date().toISOString().split('T')[0],
        routine_id || null, notes || null, duration_minutes || null, is_shared]
     )
-    res.status(201).json({ ...result.rows[0], sets: [] })
+    res.status(201).json({ ...result.rows[0], sets: [], mobility_sets: [] })
   } catch (err) {
     console.error(err)
     res.status(500).json({ error: 'Server error' })
@@ -84,20 +84,25 @@ router.post('/:id/sets', async (req, res) => {
 router.post('/:id/mobility', async (req, res) => {
   try {
     const { exercise_id, duration_seconds, sort_order = 0 } = req.body
-    if (!exercise_id || duration_seconds == null) {
-      return res.status(400).json({ error: 'exercise_id and duration_seconds are required' })
+    const exId = parseInt(exercise_id, 10)
+    const durSecs = parseInt(duration_seconds, 10)
+    if (!exId || exId < 1 || !durSecs || durSecs < 1) {
+      return res.status(400).json({ error: 'exercise_id and duration_seconds must be positive integers' })
     }
     const workout = (await pool.query(
       'SELECT * FROM workouts WHERE id = $1 AND user_id = $2', [req.params.id, req.user.id]
     )).rows[0]
     if (!workout) return res.status(404).json({ error: 'Workout not found' })
     const result = await pool.query(
-      `INSERT INTO mobility_sets (workout_id, exercise_id, sort_order, duration_seconds)
-       VALUES ($1, $2, $3, $4) RETURNING *`,
-      [workout.id, exercise_id, sort_order, duration_seconds]
+      `WITH inserted AS (
+         INSERT INTO mobility_sets (workout_id, exercise_id, sort_order, duration_seconds)
+         VALUES ($1, $2, $3, $4) RETURNING *
+       )
+       SELECT i.*, e.name as exercise_name
+       FROM inserted i JOIN exercises e ON e.id = i.exercise_id`,
+      [workout.id, exId, sort_order, durSecs]
     )
-    const ex = (await pool.query('SELECT name FROM exercises WHERE id = $1', [exercise_id])).rows[0]
-    res.status(201).json({ ...result.rows[0], exercise_name: ex?.name })
+    res.status(201).json(result.rows[0])
   } catch (err) {
     console.error(err)
     res.status(500).json({ error: 'Server error' })
