@@ -49,5 +49,11 @@ module.exports = async function globalSetup() {
   )
   await pool.query(sql4)
 
+  const sql5 = fs.readFileSync(
+    path.join(__dirname, '../db/migrations/005_add_photo_url.sql'),
+    'utf8'
+  )
+  await pool.query(sql5)
+
   await pool.end()
 }
