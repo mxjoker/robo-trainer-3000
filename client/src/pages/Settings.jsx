@@ -82,7 +82,7 @@ export default function Settings() {
       const { inviteUrl } = await api.post('/auth/invite', {})
       setInviteUrl(inviteUrl)
     } catch (err) {
-      alert('Failed to generate invite: ' + err.message)
+      alert('Failed to generate invite link. Please try again.')
     }
   }
 
@@ -102,7 +102,7 @@ export default function Settings() {
       a.click()
       URL.revokeObjectURL(url)
     } catch (err) {
-      alert('Export failed: ' + err.message)
+      alert('Export failed. Please try again.')
     } finally {
       setExporting(false)
     }
