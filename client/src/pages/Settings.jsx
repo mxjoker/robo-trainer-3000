@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../api/client'
 import { requestAndSubscribe, isSupported, currentPermission } from '../services/pushService'
@@ -36,17 +36,21 @@ export default function Settings() {
   const [notifPermission, setNotifPermission] = useState(currentPermission())
   const pushSupported = isSupported()
   const [copied, setCopied] = useState(false)
+  const copyTimerRef = useRef(null)
   const statsUrl = `${import.meta.env.VITE_API_URL ?? '/api'}/public/user/${currentUser?.id}`
 
   function copyStatsUrl() {
     navigator.clipboard.writeText(statsUrl).catch(() => {})
+    clearTimeout(copyTimerRef.current)
     setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
+    copyTimerRef.current = setTimeout(() => setCopied(false), 2000)
   }
 
   useEffect(() => {
     api.get('/notifications/preferences').then(setNotifPrefs).catch(() => {})
   }, [])
+
+  useEffect(() => () => clearTimeout(copyTimerRef.current), [])
 
   async function handleEnableNotifications() {
     try {
