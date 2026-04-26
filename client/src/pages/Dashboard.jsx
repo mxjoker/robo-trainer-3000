@@ -222,6 +222,7 @@ export default function Dashboard() {
 
       {/* Day detail sheet */}
       <DaySheet
+        key={selectedDate}
         date={selectedDate}
         data={selectedDate ? dayMap[selectedDate] : undefined}
         onClose={() => setSelectedDate(null)}
