@@ -10,6 +10,7 @@ import Settings from './pages/Settings'
 import WorkoutLogger from './screens/WorkoutLogger'
 import SharedWorkoutLogger from './screens/SharedWorkoutLogger'
 import WellnessLogger from './screens/WellnessLogger'
+import Photos from './pages/Photos'
 import BottomNav from './components/BottomNav'
 
 const styles = {
@@ -26,6 +27,7 @@ function ProtectedLayout() {
           <Route path="/stats" element={<Stats />} />
           <Route path="/partner" element={<Partner />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/photos" element={<Photos />} />
           <Route path="/log/workout" element={<WorkoutLogger />} />
           <Route path="/log/workout/shared" element={<SharedWorkoutLogger />} />
           <Route path="/log/wellness" element={<WellnessLogger />} />

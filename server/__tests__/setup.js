@@ -12,6 +12,7 @@ module.exports = async function globalSetup() {
 
   // Drop and recreate all tables cleanly
   await pool.query(`
+    DROP TABLE IF EXISTS progress_photos CASCADE;
     DROP TABLE IF EXISTS push_subscriptions CASCADE;
     DROP TABLE IF EXISTS notification_preferences CASCADE;
     DROP TABLE IF EXISTS mobility_sets CASCADE;
@@ -54,6 +55,12 @@ module.exports = async function globalSetup() {
     'utf8'
   )
   await pool.query(sql5)
+
+  const sql6 = fs.readFileSync(
+    path.join(__dirname, '../db/migrations/006_add_progress_photos.sql'),
+    'utf8'
+  )
+  await pool.query(sql6)
 
   await pool.end()
 }

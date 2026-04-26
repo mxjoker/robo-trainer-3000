@@ -4,7 +4,7 @@ import FAB from './FAB'
 const tabs = [
   { to: '/', label: 'Home', icon: '▣' },
   { to: '/stats', label: 'Stats', icon: '↗' },
-  { to: '/partner', label: 'Partner', icon: '⊕' },
+  { to: '/photos', label: 'Photos', icon: '◧' },
   { to: '/settings', label: 'Settings', icon: '⚙' }
 ]
 

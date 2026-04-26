@@ -12,6 +12,7 @@ const statsRoutes = require('./routes/stats')
 const exportRoutes = require('./routes/export')
 const { router: notificationsRoutes } = require('./routes/notifications')
 const publicRoutes = require('./routes/public')
+const photosRoutes = require('./routes/photos')
 
 const app = express()
 
@@ -19,7 +20,7 @@ app.use(cors({
   origin: process.env.CLIENT_ORIGIN || 'http://localhost:5173',
   credentials: true,
 }))
-app.use(express.json())
+app.use(express.json({ limit: '2mb' }))
 
 app.use('/api/auth', authRoutes)
 app.use('/api/exercises', exercisesRoutes)
@@ -32,6 +33,7 @@ app.use('/api/stats', statsRoutes)
 app.use('/api/export', exportRoutes)
 app.use('/api/notifications', notificationsRoutes)
 app.use('/api/public', publicRoutes)
+app.use('/api/photos', photosRoutes)
 
 // Central error handler — must be last middleware
 // eslint-disable-next-line no-unused-vars
