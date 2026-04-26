@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, act } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
 // Mock AuthContext
@@ -182,6 +182,64 @@ describe('Settings', () => {
 
       // Resolve to avoid hanging
       resolveFetch({ ok: false })
+    })
+  })
+
+  describe('Claude Personal Trainer — stats URL section', () => {
+    beforeEach(() => {
+      vi.clearAllMocks()
+      const writeTextMock = vi.fn().mockResolvedValue(undefined)
+      Object.assign(navigator, {
+        clipboard: { writeText: writeTextMock },
+      })
+    })
+
+    it('displays a stats URL containing the user id', () => {
+      renderSettings({ id: 42 })
+      // VITE_API_URL is undefined in tests, so base is /api
+      expect(screen.getByText(/\/api\/public\/user\/42/)).toBeInTheDocument()
+    })
+
+    it('renders a "Copy Stats URL" button', () => {
+      renderSettings()
+      expect(screen.getByRole('button', { name: /Copy Stats URL/i })).toBeInTheDocument()
+    })
+
+    it('copy button shows "Copied!" immediately after click', async () => {
+      renderSettings()
+      const btn = screen.getByRole('button', { name: /Copy Stats URL/i })
+      await act(async () => {
+        btn.click()
+      })
+      expect(screen.getByRole('button', { name: /Copied!/i })).toBeInTheDocument()
+    })
+
+    it('copy button reverts to "Copy Stats URL" after 2 seconds', async () => {
+      vi.useFakeTimers()
+      try {
+        renderSettings()
+        const btn = screen.getByRole('button', { name: /Copy Stats URL/i })
+        await act(async () => {
+          btn.click()
+        })
+        await act(async () => {
+          vi.advanceTimersByTime(2000)
+        })
+        expect(screen.getByRole('button', { name: /Copy Stats URL/i })).toBeInTheDocument()
+      } finally {
+        vi.useRealTimers()
+      }
+    })
+
+    it('calls navigator.clipboard.writeText with the stats URL', async () => {
+      renderSettings({ id: 42 })
+      const btn = screen.getByRole('button', { name: /Copy Stats URL/i })
+      await act(async () => {
+        btn.click()
+      })
+      expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
+        expect.stringContaining('/api/public/user/42')
+      )
     })
   })
 })

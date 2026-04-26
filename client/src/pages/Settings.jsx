@@ -35,6 +35,14 @@ export default function Settings() {
   const [notifSaving, setNotifSaving] = useState(false)
   const [notifPermission, setNotifPermission] = useState(currentPermission())
   const pushSupported = isSupported()
+  const [copied, setCopied] = useState(false)
+  const statsUrl = `${import.meta.env.VITE_API_URL ?? '/api'}/public/user/${currentUser?.id}`
+
+  function copyStatsUrl() {
+    navigator.clipboard.writeText(statsUrl).catch(() => {})
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
 
   useEffect(() => {
     api.get('/notifications/preferences').then(setNotifPrefs).catch(() => {})
@@ -178,6 +186,19 @@ export default function Settings() {
             </div>
           )}
         </div>
+
+      <div style={s.section}>
+        <div style={s.sectionLabel}>Claude Personal Trainer</div>
+        <div style={s.card}>
+          <div style={{ fontSize: 13, color: '#888', marginBottom: 8 }}>
+            Paste this URL into Claude so it can read your workout stats:
+          </div>
+          <div style={s.inviteUrl}>{statsUrl}</div>
+          <button style={{ ...s.btn(), marginTop: 8 }} onClick={copyStatsUrl}>
+            {copied ? 'Copied!' : 'Copy Stats URL'}
+          </button>
+        </div>
+      </div>
 
       <div style={s.section}>
         <div style={s.sectionLabel}>Export Data</div>
