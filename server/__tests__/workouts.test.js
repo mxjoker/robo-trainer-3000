@@ -74,3 +74,38 @@ describe('PUT /api/workouts/sets/:id', () => {
     expect(res.body.weight_lbs).toBe('195.00')
   })
 })
+
+describe('PUT /api/workouts/:id/photo', () => {
+  it('sets photo_url on the workout', async () => {
+    const { body: workout } = await request(app).post('/api/workouts')
+      .set(authHeader(joeToken)).send({ date: '2026-04-22' })
+    const res = await request(app).put(`/api/workouts/${workout.id}/photo`)
+      .set(authHeader(joeToken))
+      .send({ photo_url: 'https://res.cloudinary.com/test/image/upload/v1/photo.jpg' })
+    expect(res.status).toBe(200)
+    expect(res.body.photo_url).toBe('https://res.cloudinary.com/test/image/upload/v1/photo.jpg')
+  })
+
+  it('clears photo_url when null is sent', async () => {
+    const { body: workout } = await request(app).post('/api/workouts')
+      .set(authHeader(joeToken)).send({ date: '2026-04-22' })
+    await request(app).put(`/api/workouts/${workout.id}/photo`)
+      .set(authHeader(joeToken))
+      .send({ photo_url: 'https://res.cloudinary.com/test/image/upload/v1/photo.jpg' })
+    const res = await request(app).put(`/api/workouts/${workout.id}/photo`)
+      .set(authHeader(joeToken))
+      .send({ photo_url: null })
+    expect(res.status).toBe(200)
+    expect(res.body.photo_url).toBeNull()
+  })
+
+  it('returns 404 for a workout owned by another user', async () => {
+    const other = await createUser({ name: 'Other', email: 'other@test.com', password: 'pw' })
+    const { body: workout } = await request(app).post('/api/workouts')
+      .set(authHeader(other.token)).send({ date: '2026-04-22' })
+    const res = await request(app).put(`/api/workouts/${workout.id}/photo`)
+      .set(authHeader(joeToken))
+      .send({ photo_url: 'https://example.com/photo.jpg' })
+    expect(res.status).toBe(404)
+  })
+})

@@ -203,6 +203,26 @@ router.put('/:id', async (req, res) => {
   }
 })
 
+// PUT /api/workouts/:id/photo
+router.put('/:id/photo', async (req, res) => {
+  try {
+    const { photo_url } = req.body
+    const check = await pool.query(
+      'SELECT id FROM workouts WHERE id = $1 AND user_id = $2',
+      [req.params.id, req.user.id]
+    )
+    if (!check.rows[0]) return res.status(404).json({ error: 'Workout not found' })
+    await pool.query(
+      'UPDATE workouts SET photo_url = $1 WHERE id = $2',
+      [photo_url ?? null, req.params.id]
+    )
+    res.json(await getWorkoutWithSets(req.params.id))
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ error: 'Server error' })
+  }
+})
+
 // DELETE /api/workouts/:id
 router.delete('/:id', async (req, res) => {
   try {
