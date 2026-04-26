@@ -96,3 +96,68 @@ describe('WorkoutLogger — mobility section', () => {
     expect(screen.getByRole('textbox', { name: 'Workout notes' })).toBeInTheDocument()
   })
 })
+
+describe('WorkoutLogger — import banner & modal', () => {
+  it('shows import banner when no exercises have been added', async () => {
+    render(<WorkoutLogger />)
+    await waitFor(() => expect(api.post).toHaveBeenCalledWith('/workouts', expect.any(Object)))
+    expect(screen.getByTestId('import-banner-btn')).toBeInTheDocument()
+  })
+
+  it('opens the import modal when the banner is clicked', async () => {
+    render(<WorkoutLogger />)
+    await waitFor(() => expect(screen.getByTestId('import-banner-btn')).toBeInTheDocument())
+    fireEvent.click(screen.getByTestId('import-banner-btn'))
+    expect(screen.getByTestId('import-modal')).toBeInTheDocument()
+    expect(screen.getByRole('textbox', { name: 'Paste Claude template' })).toBeInTheDocument()
+  })
+
+  it('closes the modal when cancel is clicked', async () => {
+    render(<WorkoutLogger />)
+    await waitFor(() => expect(screen.getByTestId('import-banner-btn')).toBeInTheDocument())
+    fireEvent.click(screen.getByTestId('import-banner-btn'))
+    fireEvent.click(screen.getByTestId('import-cancel-btn'))
+    expect(screen.queryByTestId('import-modal')).not.toBeInTheDocument()
+  })
+
+  it('creates a new exercise and pre-fills the logger when importing an unknown exercise', async () => {
+    api.post
+      .mockResolvedValueOnce({ id: 5, sets: [], mobility_sets: [] })   // POST /workouts
+      .mockResolvedValueOnce({ id: 99, name: 'Romanian Deadlift', muscle_group: 'other' }) // POST /exercises
+
+    render(<WorkoutLogger />)
+    await waitFor(() => expect(screen.getByTestId('import-banner-btn')).toBeInTheDocument())
+    fireEvent.click(screen.getByTestId('import-banner-btn'))
+
+    fireEvent.change(screen.getByRole('textbox', { name: 'Paste Claude template' }), {
+      target: { value: 'Romanian Deadlift: 3x8 @ 135' },
+    })
+    fireEvent.click(screen.getByTestId('import-submit-btn'))
+
+    await waitFor(() =>
+      expect(api.post).toHaveBeenCalledWith('/exercises', {
+        name: 'Romanian Deadlift',
+        muscle_group: 'other',
+      })
+    )
+    await waitFor(() => expect(screen.getByText('Romanian Deadlift')).toBeInTheDocument())
+    expect(screen.queryByTestId('import-modal')).not.toBeInTheDocument()
+  })
+
+  it('pre-fills a known exercise without creating a new one', async () => {
+    api.post.mockResolvedValueOnce({ id: 5, sets: [], mobility_sets: [] }) // POST /workouts only
+
+    render(<WorkoutLogger />)
+    await waitFor(() => expect(screen.getByTestId('import-banner-btn')).toBeInTheDocument())
+    fireEvent.click(screen.getByTestId('import-banner-btn'))
+
+    fireEvent.change(screen.getByRole('textbox', { name: 'Paste Claude template' }), {
+      target: { value: 'Clamshell: 3x15' }, // 'Clamshell' is in the mock exercises list (id: 1)
+    })
+    fireEvent.click(screen.getByTestId('import-submit-btn'))
+
+    await waitFor(() => expect(screen.getByText('Clamshell')).toBeInTheDocument())
+    // POST /exercises should NOT have been called for a known exercise
+    expect(api.post).not.toHaveBeenCalledWith('/exercises', expect.any(Object))
+  })
+})
