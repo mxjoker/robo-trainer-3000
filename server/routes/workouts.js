@@ -184,26 +184,7 @@ router.get('/:id', async (req, res) => {
   }
 })
 
-// PUT /api/workouts/:id
-router.put('/:id', async (req, res) => {
-  try {
-    const { notes, duration_minutes } = req.body
-    const result = await pool.query(
-      `UPDATE workouts SET
-         notes = COALESCE($1, notes),
-         duration_minutes = COALESCE($2, duration_minutes)
-       WHERE id = $3 AND user_id = $4 RETURNING *`,
-      [notes ?? null, duration_minutes ?? null, req.params.id, req.user.id]
-    )
-    if (!result.rows[0]) return res.status(404).json({ error: 'Workout not found' })
-    res.json(await getWorkoutWithSets(result.rows[0].id))
-  } catch (err) {
-    console.error(err)
-    res.status(500).json({ error: 'Server error' })
-  }
-})
-
-// PUT /api/workouts/:id/photo
+// PUT /api/workouts/:id/photo  — must be BEFORE PUT /:id
 router.put('/:id/photo', async (req, res) => {
   try {
     const { photo_url } = req.body
@@ -217,6 +198,25 @@ router.put('/:id/photo', async (req, res) => {
       [photo_url ?? null, req.params.id]
     )
     res.json(await getWorkoutWithSets(req.params.id))
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ error: 'Server error' })
+  }
+})
+
+// PUT /api/workouts/:id
+router.put('/:id', async (req, res) => {
+  try {
+    const { notes, duration_minutes } = req.body
+    const result = await pool.query(
+      `UPDATE workouts SET
+         notes = COALESCE($1, notes),
+         duration_minutes = COALESCE($2, duration_minutes)
+       WHERE id = $3 AND user_id = $4 RETURNING *`,
+      [notes ?? null, duration_minutes ?? null, req.params.id, req.user.id]
+    )
+    if (!result.rows[0]) return res.status(404).json({ error: 'Workout not found' })
+    res.json(await getWorkoutWithSets(result.rows[0].id))
   } catch (err) {
     console.error(err)
     res.status(500).json({ error: 'Server error' })
