@@ -5,6 +5,7 @@ const router = express.Router()
 
 // GET /api/public/user/:userId — no auth required
 router.get('/user/:userId', async (req, res) => {
+  res.header('Access-Control-Allow-Origin', '*')
   try {
     const userId = parseInt(req.params.userId, 10)
     if (isNaN(userId)) return res.status(404).type('text').send('User not found')
