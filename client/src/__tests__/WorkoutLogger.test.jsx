@@ -162,28 +162,27 @@ describe('WorkoutLogger — import banner & modal', () => {
     expect(api.post).toHaveBeenCalledTimes(1) // only the initial POST /workouts
   })
 
-  it('does not add duplicate exercises when the same exercise is imported twice', async () => {
-    api.post
-      .mockResolvedValueOnce({ id: 5, sets: [], mobility_sets: [] }) // POST /workouts
+  it('does not add duplicate exercises when the same exercise appears twice in the template', async () => {
+    api.post.mockResolvedValueOnce({ id: 5, sets: [], mobility_sets: [] }) // POST /workouts only
 
     render(<WorkoutLogger />)
     await waitFor(() => expect(screen.getByTestId('import-banner-btn')).toBeInTheDocument())
-
-    // Import Clamshell once
     fireEvent.click(screen.getByTestId('import-banner-btn'))
+
+    // Same exercise (Clamshell) appears twice in the template
     fireEvent.change(screen.getByRole('textbox', { name: 'Paste Claude template' }), {
-      target: { value: 'Clamshell: 3x15' },
+      target: { value: 'Clamshell: 3x15\nClamshell: 3x12' },
     })
     fireEvent.click(screen.getByTestId('import-submit-btn'))
+
     await waitFor(() => expect(screen.queryByTestId('import-modal')).not.toBeInTheDocument())
 
-    // Import Clamshell again — banner is gone now, but we can open it from state reset
-    // (In practice the banner is gone after first import, so we test the deduplication
-    // by checking there's only one exercise card with 'Clamshell' in the logged list)
-    const clamshellCards = screen.getAllByText('Clamshell')
-    // The exercise name appears in the exercise card header — should be exactly 1
-    // (It may also appear in the mobility picker select, so filter for the exercise card)
-    const exerciseCardHeaders = clamshellCards.filter(el => el.tagName !== 'OPTION')
+    // Only one exercise card for Clamshell should exist (deduplication guard works)
+    const clamshellElements = screen.getAllByText('Clamshell')
+    const exerciseCardHeaders = clamshellElements.filter(el => el.tagName !== 'OPTION')
     expect(exerciseCardHeaders).toHaveLength(1)
+
+    // api.post should only have been called once (POST /workouts — no POST /exercises for known exercise)
+    expect(api.post).toHaveBeenCalledTimes(1)
   })
 })
