@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../api/client'
 import StatCard from '../components/StatCard'
@@ -63,6 +63,7 @@ function thirtyDaysAgo() {
 export default function Dashboard() {
   const { currentUser } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
 
   const now = new Date()
   const dayName = DAYS[now.getDay()]
@@ -79,6 +80,10 @@ export default function Dashboard() {
 
   // Calendar state
   const [currentMonth, setCurrentMonth] = useState({ year: now.getFullYear(), month: now.getMonth() })
+  // Open DaySheet for a date passed via navigation state (e.g. from Photos gallery)
+  useEffect(() => {
+    if (location.state?.selectedDate) setSelectedDate(location.state.selectedDate)
+  }, [])
   const [dayMap, setDayMap] = useState({})
   const [calLoading, setCalLoading] = useState(false)
   const [calError, setCalError] = useState(null)
@@ -222,6 +227,17 @@ export default function Dashboard() {
         onClose={() => setSelectedDate(null)}
         onLogWorkout={() => { setSelectedDate(null); navigate('/log/workout') }}
         onLogWellness={() => { setSelectedDate(null); navigate('/log/wellness') }}
+        onPhotoChange={(workoutId, photoUrl) => {
+          setDayMap(prev => {
+            const newMap = { ...prev }
+            for (const key of Object.keys(newMap)) {
+              if (newMap[key].workout?.id === workoutId) {
+                newMap[key] = { ...newMap[key], workout: { ...newMap[key].workout, photo_url: photoUrl } }
+              }
+            }
+            return newMap
+          })
+        }}
       />
     </div>
   )

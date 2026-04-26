@@ -7,6 +7,7 @@ import Dashboard from './pages/Dashboard'
 import Stats from './pages/Stats'
 import Partner from './pages/Partner'
 import Settings from './pages/Settings'
+import Photos from './pages/Photos'
 import WorkoutLogger from './screens/WorkoutLogger'
 import SharedWorkoutLogger from './screens/SharedWorkoutLogger'
 import WellnessLogger from './screens/WellnessLogger'
@@ -24,6 +25,7 @@ function ProtectedLayout() {
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/stats" element={<Stats />} />
+          <Route path="/photos" element={<Photos />} />
           <Route path="/partner" element={<Partner />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/log/workout" element={<WorkoutLogger />} />
