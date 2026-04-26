@@ -79,4 +79,16 @@ describe('GET /api/public/user/:userId', () => {
     const res = await request(app).get(`/api/public/user/${userId}`)
     expect(res.text).not.toContain('WELLNESS')
   })
+
+  it('includes wellness section when wellness data exists', async () => {
+    await pool.query(
+      `INSERT INTO wellness_logs (user_id, date, pain_level, energy_level, mood)
+       VALUES ($1, CURRENT_DATE, 3, 8, 7)`,
+      [userId]
+    )
+    const res = await request(app).get(`/api/public/user/${userId}`)
+    expect(res.text).toContain('WELLNESS')
+    expect(res.text).toContain('Avg pain:')
+    expect(res.text).toContain('Avg energy:')
+  })
 })

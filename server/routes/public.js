@@ -46,7 +46,7 @@ router.get('/user/:userId', async (req, res) => {
         `SELECT s.workout_id, e.name AS exercise_name, s.set_number, s.reps, s.weight_lbs
          FROM sets s JOIN exercises e ON e.id = s.exercise_id
          WHERE s.workout_id = ANY($1)
-         ORDER BY s.workout_id, s.exercise_id, s.set_number`,
+         ORDER BY s.workout_id, s.set_number`,
         [workoutIds]
       )
       setsRows = setsResult.rows
