@@ -1,17 +1,58 @@
+import { useState, useRef } from 'react'
+import { api } from '../api/client'
+import { uploadToCloudinary } from '../services/cloudinaryService'
+
 function formatDate(dateStr) {
   return new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', {
     weekday: 'short', month: 'short', day: 'numeric'
   })
 }
 
-export default function DaySheet({ date, data, onClose, onLogWorkout, onLogWellness }) {
-  if (!date) return null
-
+export default function DaySheet({ date, data, onClose, onLogWorkout, onLogWellness, onPhotoChange }) {
   const workout = data?.workout
   const wellness = data?.wellness
-  const isEmpty = !workout && !wellness
 
+  const [photoUrl, setPhotoUrl] = useState(workout?.photo_url ?? null)
+  const [photoLoading, setPhotoLoading] = useState(false)
+  const [photoError, setPhotoError] = useState(null)
+  const fileInputRef = useRef(null)
+
+  if (!date) return null
+
+  const isEmpty = !workout && !wellness
   const exerciseNames = [...new Set((workout?.sets ?? []).map(s => s.exercise_name))]
+
+  async function handleFileSelect(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setPhotoLoading(true)
+    setPhotoError(null)
+    try {
+      const url = await uploadToCloudinary(file)
+      const updated = await api.put(`/workouts/${workout.id}/photo`, { photo_url: url })
+      setPhotoUrl(updated.photo_url)
+      onPhotoChange?.(workout.id, updated.photo_url)
+    } catch {
+      setPhotoError('Upload failed. Please try again.')
+    } finally {
+      setPhotoLoading(false)
+      e.target.value = ''
+    }
+  }
+
+  async function handleRemove() {
+    setPhotoLoading(true)
+    setPhotoError(null)
+    try {
+      await api.put(`/workouts/${workout.id}/photo`, { photo_url: null })
+      setPhotoUrl(null)
+      onPhotoChange?.(workout.id, null)
+    } catch {
+      setPhotoError('Could not remove photo. Please try again.')
+    } finally {
+      setPhotoLoading(false)
+    }
+  }
 
   return (
     <>
@@ -64,6 +105,51 @@ export default function DaySheet({ date, data, onClose, onLogWorkout, onLogWelln
                 )}
               </div>
             )}
+
+            {workout && (
+              <div style={{ marginBottom: 10 }}>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  style={{ display: 'none' }}
+                  onChange={handleFileSelect}
+                />
+                {photoUrl ? (
+                  <div style={{ borderRadius: 10, overflow: 'hidden' }}>
+                    <img
+                      src={photoUrl}
+                      alt="progress photo"
+                      style={{ width: '100%', display: 'block', maxHeight: 240, objectFit: 'cover' }}
+                    />
+                    <div style={{ display: 'flex', gap: 8, padding: 8, background: '#1a1a2e' }}>
+                      <button
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={photoLoading}
+                        style={{ flex: 1, padding: 7, background: '#252540', border: 'none', borderRadius: 7, color: '#a090ff', fontSize: 11, cursor: 'pointer' }}
+                      >Change</button>
+                      <button
+                        onClick={handleRemove}
+                        disabled={photoLoading}
+                        style={{ flex: 1, padding: 7, background: '#252540', border: 'none', borderRadius: 7, color: '#e05555', fontSize: 11, cursor: 'pointer' }}
+                      >Remove</button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={photoLoading}
+                    style={{ width: '100%', padding: 14, background: 'transparent', border: '1.5px dashed #333', borderRadius: 10, color: '#555', fontSize: 13, cursor: 'pointer', textAlign: 'center' }}
+                  >
+                    📷 {photoLoading ? 'Uploading...' : 'Add progress photo'}
+                  </button>
+                )}
+                {photoError && (
+                  <div style={{ fontSize: 11, color: '#e05555', marginTop: 6 }}>{photoError}</div>
+                )}
+              </div>
+            )}
+
             {wellness && (
               <div style={{ background: '#1a1a2e', borderRadius: 10, padding: 14 }}>
                 <div style={{ color: '#a090ff', fontWeight: 600, fontSize: 13, marginBottom: 8 }}>🌿 Wellness</div>

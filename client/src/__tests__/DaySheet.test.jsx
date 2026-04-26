@@ -1,6 +1,17 @@
-import { describe, it, expect, vi } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import DaySheet from '../components/DaySheet'
+
+vi.mock('../api/client', () => ({
+  api: { put: vi.fn() }
+}))
+
+vi.mock('../services/cloudinaryService', () => ({
+  uploadToCloudinary: vi.fn()
+}))
+
+import { api } from '../api/client'
+import { uploadToCloudinary } from '../services/cloudinaryService'
 
 const workout = {
   id: 1,
@@ -24,6 +35,10 @@ const wellness = {
 }
 
 describe('DaySheet', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
   it('renders nothing when date is null', () => {
     const { container } = render(
       <DaySheet date={null} data={undefined} onClose={() => {}} onLogWorkout={() => {}} onLogWellness={() => {}} />
@@ -135,5 +150,44 @@ describe('DaySheet', () => {
       <DaySheet date="2026-04-21" data={{ workout: workoutNoMobility }} onClose={() => {}} onLogWorkout={() => {}} onLogWellness={() => {}} />
     )
     expect(screen.queryByText(/Mobility:/)).not.toBeInTheDocument()
+  })
+
+  it('shows dashed upload target when workout has no photo', () => {
+    const workoutNoPhoto = { id: 1, notes: 'Push Day', duration_minutes: 45, sets: [], photo_url: null }
+    render(
+      <DaySheet date="2026-04-21" data={{ workout: workoutNoPhoto }} onClose={() => {}} onLogWorkout={() => {}} onLogWellness={() => {}} onPhotoChange={() => {}} />
+    )
+    expect(screen.getByText(/Add progress photo/)).toBeInTheDocument()
+  })
+
+  it('shows photo img and Change/Remove buttons when workout has a photo', () => {
+    const workoutWithPhoto = { id: 1, notes: 'Push Day', duration_minutes: 45, sets: [], photo_url: 'https://res.cloudinary.com/test/photo.jpg' }
+    render(
+      <DaySheet date="2026-04-21" data={{ workout: workoutWithPhoto }} onClose={() => {}} onLogWorkout={() => {}} onLogWellness={() => {}} onPhotoChange={() => {}} />
+    )
+    expect(screen.getByRole('img', { name: /progress photo/i })).toBeInTheDocument()
+    expect(screen.getByText('Change')).toBeInTheDocument()
+    expect(screen.getByText('Remove')).toBeInTheDocument()
+  })
+
+  it('does not show photo section when there is no workout', () => {
+    render(
+      <DaySheet date="2026-04-21" data={{ wellness: { id: 1, energy_level: 8, mood: 7, pain_level: 2, sleep_hours: 7, water_oz: 80, creatine_taken: false } }} onClose={() => {}} onLogWorkout={() => {}} onLogWellness={() => {}} onPhotoChange={() => {}} />
+    )
+    expect(screen.queryByText(/Add progress photo/)).not.toBeInTheDocument()
+  })
+
+  it('calls api.put with null and onPhotoChange when Remove is clicked', async () => {
+    api.put.mockResolvedValue({ id: 1, photo_url: null })
+    const onPhotoChange = vi.fn()
+    const workoutWithPhoto = { id: 1, notes: 'Push Day', duration_minutes: 45, sets: [], photo_url: 'https://res.cloudinary.com/test/photo.jpg' }
+    render(
+      <DaySheet date="2026-04-21" data={{ workout: workoutWithPhoto }} onClose={() => {}} onLogWorkout={() => {}} onLogWellness={() => {}} onPhotoChange={onPhotoChange} />
+    )
+    fireEvent.click(screen.getByText('Remove'))
+    await waitFor(() => {
+      expect(api.put).toHaveBeenCalledWith('/workouts/1/photo', { photo_url: null })
+      expect(onPhotoChange).toHaveBeenCalledWith(1, null)
+    })
   })
 })
