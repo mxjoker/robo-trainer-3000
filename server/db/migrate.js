@@ -3,14 +3,25 @@ const fs = require('fs')
 const path = require('path')
 const { pool } = require('./pool')
 
+const MIGRATIONS = [
+  '001_initial_schema.sql',
+  '002_add_meds.sql',
+  '003_add_push.sql',
+  '004_add_mobility.sql',
+  '005_add_photo_url.sql',
+]
+
 async function migrate() {
   try {
-    const sql = fs.readFileSync(
-      path.join(__dirname, 'migrations', '001_initial_schema.sql'),
-      'utf8'
-    )
-    await pool.query(sql)
-    console.log('Migration complete')
+    for (const file of MIGRATIONS) {
+      const sql = fs.readFileSync(
+        path.join(__dirname, 'migrations', file),
+        'utf8'
+      )
+      await pool.query(sql)
+      console.log(`✓ ${file}`)
+    }
+    console.log('All migrations complete')
   } finally {
     await pool.end()
   }
