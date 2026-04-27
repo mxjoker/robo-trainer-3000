@@ -3,7 +3,7 @@ import LogSheet from './LogSheet'
 
 const s = {
   btn: {
-    position: 'fixed', bottom: 20, left: 20, zIndex: 200,
+    position: 'fixed', bottom: 74, right: 12, zIndex: 200,
     width: 52, height: 52, borderRadius: '50%', background: '#7c6af7',
     border: 'none', color: '#fff', fontSize: 28, fontWeight: 300,
     cursor: 'pointer', boxShadow: '0 4px 16px rgba(124,106,247,0.4)',

@@ -6,7 +6,7 @@ import { parseClaudeTemplate } from '../utils/parseClaudeTemplate'
 const MUSCLE_GROUPS = ['chest', 'back', 'shoulders', 'biceps', 'triceps', 'legs', 'glutes', 'hamstrings', 'core', 'other']
 
 const s = {
-  page: { padding: '16px 8px 100px', maxWidth: 480, margin: '0 auto' },
+  page: { padding: '16px 4px 100px' },
   header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
   title: { fontSize: 18, fontWeight: 700, letterSpacing: '-0.5px' },
   backBtn: { background: 'none', border: 'none', color: '#7c6af7', fontSize: 14, cursor: 'pointer', padding: '4px 0' },
