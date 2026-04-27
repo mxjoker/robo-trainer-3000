@@ -32,7 +32,8 @@ export default function DaySheet({ date, data, onClose, onLogWorkout, onLogWelln
       const updated = await api.put(`/workouts/${workout.id}/photo`, { photo_url: url })
       setPhotoUrl(updated.photo_url)
       onPhotoChange?.(workout.id, updated.photo_url)
-    } catch {
+    } catch (err) {
+      console.error('Photo upload error:', err)
       setPhotoError('Upload failed. Please try again.')
     } finally {
       setPhotoLoading(false)
