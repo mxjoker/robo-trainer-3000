@@ -29,7 +29,7 @@ router.get('/workouts', async (req, res) => {
     const partnerId = await getPartnerId(req.user.id)
     if (!partnerId) return res.status(404).json({ error: 'No partner linked' })
     const workouts = await pool.query(
-      'SELECT id, user_id, date, routine_id, notes, duration_minutes, is_shared FROM workouts WHERE user_id = $1 ORDER BY date DESC', [partnerId]
+      'SELECT id, user_id, date, routine_id, notes, duration_minutes, is_shared, photo_url FROM workouts WHERE user_id = $1 ORDER BY date DESC', [partnerId]
     )
     const withSets = await Promise.all(workouts.rows.map(async w => {
       const sets = (await pool.query(
