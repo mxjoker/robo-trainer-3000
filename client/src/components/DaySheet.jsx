@@ -66,6 +66,7 @@ export default function DaySheet({ date, data, onClose, onLogWorkout, onLogWelln
         position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 51,
         background: '#12121f', borderRadius: '16px 16px 0 0',
         padding: '12px 16px 40px', maxWidth: 480, margin: '0 auto',
+        maxHeight: '85vh', overflowY: 'auto',
       }}>
         <div style={{ width: 36, height: 4, background: '#333', borderRadius: 2, margin: '0 auto 16px' }} />
         <div style={{ fontSize: 15, fontWeight: 700, color: '#fff', marginBottom: 14 }}>

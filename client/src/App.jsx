@@ -12,6 +12,7 @@ import WorkoutLogger from './screens/WorkoutLogger'
 import SharedWorkoutLogger from './screens/SharedWorkoutLogger'
 import WellnessLogger from './screens/WellnessLogger'
 import BottomNav from './components/BottomNav'
+import FAB from './components/FAB'
 
 const styles = {
   app: { display: 'flex', flexDirection: 'column', minHeight: '100vh', maxWidth: 480, margin: '0 auto' },
@@ -35,6 +36,7 @@ function ProtectedLayout() {
         </Routes>
       </main>
       <BottomNav />
+      <FAB />
     </div>
   )
 }

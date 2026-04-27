@@ -4,7 +4,7 @@ import { api } from '../api/client'
 import { requestAndSubscribe, isSupported, currentPermission } from '../services/pushService'
 
 const s = {
-  page: { padding: '20px 16px 100px', maxWidth: 480, margin: '0 auto' },
+  page: { padding: '20px 8px 100px', maxWidth: 480, margin: '0 auto' },
   title: { fontSize: 22, fontWeight: 700, letterSpacing: '-0.5px', marginBottom: 20 },
   section: { marginBottom: 24 },
   sectionLabel: { fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.5px', color: '#555', marginBottom: 10 },

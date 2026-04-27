@@ -5,7 +5,7 @@ import { api } from '../api/client'
 const PAIN_AREAS = ['Knee', 'Back', 'Shoulder', 'Hip', 'Neck', 'General Fatigue', 'Wrist', 'Ankle']
 
 const s = {
-  page: { padding: '16px 16px 100px', maxWidth: 480, margin: '0 auto' },
+  page: { padding: '16px 8px 100px', maxWidth: 480, margin: '0 auto' },
   header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
   title: { fontSize: 18, fontWeight: 700 },
   backBtn: { background: 'none', border: 'none', color: '#7c6af7', fontSize: 14, cursor: 'pointer' },

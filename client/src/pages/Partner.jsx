@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { api } from '../api/client'
 
 const s = {
-  page: { padding: '20px 16px 100px', maxWidth: 480, margin: '0 auto' },
+  page: { padding: '20px 8px 100px', maxWidth: 480, margin: '0 auto' },
   title: { fontSize: 22, fontWeight: 700, letterSpacing: '-0.5px', marginBottom: 4 },
   sub: { fontSize: 13, color: '#666', marginBottom: 20 },
   card: { background: '#1a1a2e', borderRadius: 10, padding: 14, marginBottom: 10 },

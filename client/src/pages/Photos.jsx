@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../api/client'
 
@@ -15,11 +14,11 @@ function thumbnailUrl(url) {
 }
 
 const s = {
-  page: { padding: '20px 16px 100px', maxWidth: 480, margin: '0 auto' },
+  page: { padding: '20px 8px 100px', maxWidth: 480, margin: '0 auto' },
   title: { fontSize: 22, fontWeight: 700, letterSpacing: '-0.5px', marginBottom: 20 },
   monthLabel: { fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.5px', color: '#555', marginBottom: 10 },
   grid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 20 },
-  tile: { borderRadius: 10, overflow: 'hidden', cursor: 'pointer', position: 'relative' },
+  tile: { borderRadius: 10, overflow: 'hidden', position: 'relative' },
   photo: { width: '100%', height: 130, objectFit: 'cover', display: 'block' },
   caption: { padding: '5px 8px', background: '#1a1a2e', fontSize: 11, color: '#888' },
   partnerTag: { position: 'absolute', top: 6, right: 6, width: 18, height: 18, borderRadius: '50%', background: '#f7a76c', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: '#12121f' },
@@ -28,7 +27,6 @@ const s = {
 
 export default function Photos() {
   const { currentUser } = useAuth()
-  const navigate = useNavigate()
   const [groups, setGroups] = useState(null)
 
   useEffect(() => {
@@ -74,7 +72,6 @@ export default function Photos() {
                 <div
                   key={w.id}
                   style={s.tile}
-                  onClick={() => navigate('/', { state: { selectedDate: w.date.split('T')[0] } })}
                 >
                   <img
                     src={thumbnailUrl(w.photo_url)}

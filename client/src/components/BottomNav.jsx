@@ -1,5 +1,4 @@
 import { NavLink } from 'react-router-dom'
-import FAB from './FAB'
 
 const tabs = [
   { to: '/', label: 'Home', icon: '▣' },
@@ -25,15 +24,8 @@ const s = {
 export default function BottomNav() {
   return (
     <nav style={s.nav}>
-      {tabs.slice(0, 2).map(tab => (
+      {tabs.map(tab => (
         <NavLink key={tab.to} to={tab.to} end={tab.to === '/'} style={({ isActive }) => ({ ...s.tab, ...(isActive ? s.active : {}) })}>
-          <span style={s.icon}>{tab.icon}</span>
-          {tab.label}
-        </NavLink>
-      ))}
-      <FAB />
-      {tabs.slice(2).map(tab => (
-        <NavLink key={tab.to} to={tab.to} style={({ isActive }) => ({ ...s.tab, ...(isActive ? s.active : {}) })}>
           <span style={s.icon}>{tab.icon}</span>
           {tab.label}
         </NavLink>
