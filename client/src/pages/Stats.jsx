@@ -47,6 +47,8 @@ export default function Stats() {
   const [selectedExId, setSelectedExId] = useState('')
   const [strengthData, setStrengthData] = useState([])
   const [prs, setPrs] = useState([])
+  const [partnerPrs, setPartnerPrs] = useState([])
+  const [showPartnerPrs, setShowPartnerPrs] = useState(false)
   const [healthFilter, setHealthFilter] = useState('30d')
   const [healthData, setHealthData] = useState([])
   const [consistency, setConsistency] = useState(null)
@@ -57,6 +59,7 @@ export default function Stats() {
       if (exs.length) setSelectedExId(String(exs[0].id))
     }).catch(() => {})
     api.get('/stats/prs').then(setPrs).catch(() => {})
+    api.get('/partner/stats/prs').then(setPartnerPrs).catch(() => {})
     api.get('/stats/consistency').then(setConsistency).catch(() => {})
   }, [])
 
@@ -108,8 +111,18 @@ export default function Stats() {
 
           <div style={s.card}>
             <div style={s.sectionLabel}>Personal Records</div>
-            {prs.length === 0 && <div style={{ color: '#555', fontSize: 13 }}>No lifts logged yet</div>}
-            {prs.map(pr => (
+            {(prs.length > 0 || partnerPrs.length > 0) && (
+              <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+                <button style={s.filterBtn(!showPartnerPrs)} onClick={() => setShowPartnerPrs(false)}>My PRs</button>
+                {partnerPrs.length > 0 && (
+                  <button style={s.filterBtn(showPartnerPrs)} onClick={() => setShowPartnerPrs(true)}>Partner PRs</button>
+                )}
+              </div>
+            )}
+            {(showPartnerPrs ? partnerPrs : prs).length === 0 && (
+              <div style={{ color: '#555', fontSize: 13 }}>No lifts logged yet</div>
+            )}
+            {(showPartnerPrs ? partnerPrs : prs).map(pr => (
               <div key={pr.exercise_id} style={s.prRow}>
                 <div style={s.prName}>{pr.exercise_name}</div>
                 <div style={s.prWeight}>{Number(pr.max_weight_lbs)} lbs</div>
