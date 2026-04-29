@@ -68,15 +68,16 @@ router.put('/preferences', async (req, res) => {
   const {
     water_enabled, water_interval_hours, water_start_hour, water_end_hour,
     creatine_enabled, creatine_hour,
-    workout_enabled, workout_hour
+    workout_enabled, workout_hour,
+    utc_offset,
   } = req.body
 
   try {
     const result = await pool.query(
       `INSERT INTO notification_preferences
          (user_id, water_enabled, water_interval_hours, water_start_hour, water_end_hour,
-          creatine_enabled, creatine_hour, workout_enabled, workout_hour, updated_at)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,NOW())
+          creatine_enabled, creatine_hour, workout_enabled, workout_hour, utc_offset, updated_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,NOW())
        ON CONFLICT (user_id) DO UPDATE SET
          water_enabled = COALESCE($2, notification_preferences.water_enabled),
          water_interval_hours = COALESCE($3, notification_preferences.water_interval_hours),
@@ -86,18 +87,43 @@ router.put('/preferences', async (req, res) => {
          creatine_hour = COALESCE($7, notification_preferences.creatine_hour),
          workout_enabled = COALESCE($8, notification_preferences.workout_enabled),
          workout_hour = COALESCE($9, notification_preferences.workout_hour),
+         utc_offset = COALESCE($10, notification_preferences.utc_offset),
          updated_at = NOW()
        RETURNING *`,
       [req.user.id,
        water_enabled ?? null, water_interval_hours ?? null,
        water_start_hour ?? null, water_end_hour ?? null,
        creatine_enabled ?? null, creatine_hour ?? null,
-       workout_enabled ?? null, workout_hour ?? null]
+       workout_enabled ?? null, workout_hour ?? null,
+       utc_offset ?? null]
     )
     res.json(result.rows[0])
   } catch (err) {
     res.status(500).json({ error: err.message || 'Internal server error' })
   }
+})
+
+// POST /api/notifications/test — send an immediate test push notification
+router.post('/test', async (req, res) => {
+  const { rows: subs } = await pool.query(
+    'SELECT * FROM push_subscriptions WHERE user_id = $1', [req.user.id]
+  )
+  if (!subs.length) return res.status(400).json({ error: 'No subscription found. Enable notifications first.' })
+  let sent = 0
+  for (const sub of subs) {
+    try {
+      await webpush.sendNotification(
+        { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
+        JSON.stringify({ title: 'Test notification', body: 'Robo-Trainer notifications are working!', tag: 'test' })
+      )
+      sent++
+    } catch (err) {
+      if (err.statusCode === 410) {
+        await pool.query('DELETE FROM push_subscriptions WHERE endpoint = $1', [sub.endpoint])
+      }
+    }
+  }
+  res.json({ sent })
 })
 
 module.exports = { router, webpush }

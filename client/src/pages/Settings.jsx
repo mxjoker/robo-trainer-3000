@@ -28,6 +28,7 @@ export default function Settings() {
   const [exportFormat, setExportFormat] = useState('csv')
   const [exporting, setExporting] = useState(false)
   const [seeding, setSeeding] = useState(false)
+  const [testingSend, setTestingSend] = useState(false)
   const [notifPrefs, setNotifPrefs] = useState({
     water_enabled: false, water_interval_hours: 2, water_start_hour: 8, water_end_hour: 20,
     creatine_enabled: false, creatine_hour: 8,
@@ -65,12 +66,25 @@ export default function Settings() {
   async function saveNotifPrefs() {
     setNotifSaving(true)
     try {
-      const updated = await api.put('/notifications/preferences', notifPrefs)
+      const utcOffset = -(new Date().getTimezoneOffset() / 60)
+      const updated = await api.put('/notifications/preferences', { ...notifPrefs, utc_offset: utcOffset })
       setNotifPrefs(updated)
     } catch (err) {
       alert('Failed to save notification preferences. Please try again.')
     } finally {
       setNotifSaving(false)
+    }
+  }
+
+  async function sendTestNotification() {
+    setTestingSend(true)
+    try {
+      const { sent } = await api.post('/notifications/test')
+      alert(sent > 0 ? 'Test notification sent! Check your device.' : 'No active subscription found.')
+    } catch (err) {
+      alert('Failed: ' + err.message)
+    } finally {
+      setTestingSend(false)
     }
   }
 
@@ -199,6 +213,9 @@ export default function Settings() {
 
               <button style={s.btn()} onClick={saveNotifPrefs} disabled={notifSaving}>
                 {notifSaving ? 'Saving...' : 'Save Reminders'}
+              </button>
+              <button style={s.btn('#252540')} onClick={sendTestNotification} disabled={testingSend}>
+                {testingSend ? 'Sending...' : 'Send Test Notification'}
               </button>
             </div>
           )}
