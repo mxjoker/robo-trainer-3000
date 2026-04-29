@@ -11,6 +11,8 @@ const MIGRATIONS = [
   '003_add_push.sql',
   '004_add_mobility.sql',
   '005_add_photo_url.sql',
+  '006_add_routine_defaults.sql',
+  '007_add_notification_utc_offset.sql',
 ]
 
 async function runMigrations() {

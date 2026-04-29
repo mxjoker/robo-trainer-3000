@@ -27,6 +27,7 @@ export default function Settings() {
   const [inviteUrl, setInviteUrl] = useState('')
   const [exportFormat, setExportFormat] = useState('csv')
   const [exporting, setExporting] = useState(false)
+  const [seeding, setSeeding] = useState(false)
   const [notifPrefs, setNotifPrefs] = useState({
     water_enabled: false, water_interval_hours: 2, water_start_hour: 8, water_end_hour: 20,
     creatine_enabled: false, creatine_hour: 8,
@@ -83,6 +84,18 @@ export default function Settings() {
       setInviteUrl(inviteUrl)
     } catch (err) {
       alert('Failed to generate invite link. Please try again.')
+    }
+  }
+
+  async function seedDefaults() {
+    setSeeding(true)
+    try {
+      await api.post('/routines/seed-defaults')
+      alert("Day A/B/C templates loaded! They'll appear when you start a workout.")
+    } catch {
+      alert('Failed to load templates.')
+    } finally {
+      setSeeding(false)
     }
   }
 
@@ -201,6 +214,16 @@ export default function Settings() {
           <button style={{ ...s.btn(), marginTop: 8 }} onClick={copyStatsUrl}>
             {copied ? 'Copied!' : 'Copy Stats URL'}
           </button>
+        </div>
+      </div>
+
+      <div style={s.section}>
+        <div style={s.sectionLabel}>Workout Templates</div>
+        <div style={s.card}>
+          <button style={s.btn()} onClick={seedDefaults} disabled={seeding}>
+            {seeding ? 'Loading...' : 'Load Day A / B / C Templates'}
+          </button>
+          <div style={s.hint}>Pre-fills Days A, B, C with standard exercises. Weights still entered live.</div>
         </div>
       </div>
 
