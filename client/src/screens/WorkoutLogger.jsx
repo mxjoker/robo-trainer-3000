@@ -62,6 +62,8 @@ export default function WorkoutLogger() {
   const [importModalOpen, setImportModalOpen] = useState(false)
   const [importText, setImportText] = useState('')
   const [importing, setImporting] = useState(false)
+  const [weightModalDone, setWeightModalDone] = useState(false)
+  const [weightInput, setWeightInput] = useState('')
 
   useEffect(() => {
     api.get('/exercises').then(setAllExercises)
@@ -212,6 +214,18 @@ export default function WorkoutLogger() {
     }
   }
 
+  async function submitWeight() {
+    const today = new Date().toISOString().split('T')[0]
+    if (weightInput) {
+      try {
+        await api.post('/metrics', { weight_lbs: Number(weightInput), date: today })
+      } catch {
+        // non-critical
+      }
+    }
+    setWeightModalDone(true)
+  }
+
   async function finish() {
     if (!workoutId) return
     setSaving(true)
@@ -238,6 +252,28 @@ export default function WorkoutLogger() {
 
   return (
     <div style={s.page}>
+      {!weightModalDone && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, zIndex: 200 }}>
+          <div style={{ background: '#1a1a2e', borderRadius: 14, padding: 24, width: '100%', maxWidth: 340, display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div style={{ fontSize: 17, fontWeight: 700 }}>Log today's weight?</div>
+            <input
+              style={{ background: '#252540', border: '1px solid #333', borderRadius: 8, padding: '10px 14px', color: '#fff', fontSize: 16, outline: 'none', width: '100%' }}
+              type="number"
+              inputMode="decimal"
+              placeholder="lbs (optional)"
+              value={weightInput}
+              onChange={e => setWeightInput(e.target.value)}
+              autoFocus
+            />
+            <button
+              style={{ background: '#7c6af7', border: 'none', borderRadius: 10, padding: 13, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
+              onClick={submitWeight}
+            >
+              {weightInput ? 'Log & Start Workout' : 'Skip'}
+            </button>
+          </div>
+        </div>
+      )}
       <div style={s.header}>
         <button style={s.backBtn} onClick={() => navigate('/')}>Cancel</button>
         <div style={s.title}>Log Workout</div>

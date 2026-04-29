@@ -116,4 +116,47 @@ router.post('/workouts/:id/sets', async (req, res) => {
   }
 })
 
+// POST /api/partner/metrics — log body weight on behalf of partner
+router.post('/metrics', async (req, res) => {
+  try {
+    const partnerId = await getPartnerId(req.user.id)
+    if (!partnerId) return res.status(404).json({ error: 'No partner linked' })
+    const { weight_lbs, date } = req.body
+    const logDate = date || new Date().toISOString().split('T')[0]
+    const { rows } = await pool.query(
+      `INSERT INTO body_metrics (user_id, date, weight_lbs)
+       VALUES ($1, $2, $3)
+       ON CONFLICT (user_id, date) DO UPDATE SET weight_lbs = EXCLUDED.weight_lbs
+       RETURNING *`,
+      [partnerId, logDate, weight_lbs]
+    )
+    res.status(201).json(rows[0])
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ error: 'Server error' })
+  }
+})
+
+// GET /api/partner/stats/prs — partner's personal records (max weight per exercise)
+router.get('/stats/prs', async (req, res) => {
+  try {
+    const partnerId = await getPartnerId(req.user.id)
+    if (!partnerId) return res.status(404).json({ error: 'No partner linked' })
+    const { rows } = await pool.query(
+      `SELECT e.id AS exercise_id, e.name AS exercise_name, MAX(s.weight_lbs) AS max_weight_lbs
+       FROM sets s
+       JOIN exercises e ON e.id = s.exercise_id
+       JOIN workouts w ON w.id = s.workout_id
+       WHERE w.user_id = $1 AND s.weight_lbs IS NOT NULL
+       GROUP BY e.id, e.name
+       ORDER BY MAX(s.weight_lbs) DESC`,
+      [partnerId]
+    )
+    res.json(rows)
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ error: 'Server error' })
+  }
+})
+
 module.exports = router
