@@ -44,8 +44,8 @@ const s = {
 
 function makeSet(prev = null) {
   return {
-    joe: { weight: prev?.joe.weight ?? '', reps: prev?.joe.reps ?? '' },
-    partner: { weight: prev?.partner.weight ?? '', reps: prev?.partner.reps ?? '' },
+    joe: { weight: prev?.joe.weight ?? '', reps: prev?.joe.reps ?? '10' },
+    partner: { weight: prev?.partner.weight ?? '', reps: prev?.partner.reps ?? '10' },
     confirmed: false
   }
 }

@@ -34,7 +34,7 @@ const s = {
 }
 
 function makeSet(prev = null) {
-  return { weight: prev?.weight ?? '', reps: prev?.reps ?? '', confirmed: false }
+  return { weight: prev?.weight ?? '', reps: prev?.reps ?? '10', confirmed: false }
 }
 
 export default function WorkoutLogger() {
