@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../api/client'
+import { parseClaudeTemplate } from '../utils/parseClaudeTemplate'
 
 const MUSCLE_GROUPS = ['chest', 'back', 'shoulders', 'biceps', 'triceps', 'legs', 'glutes', 'hamstrings', 'core', 'other']
 
@@ -66,6 +67,9 @@ export default function SharedWorkoutLogger() {
   const [newIsPT, setNewIsPT] = useState(false)
   const [addingNew, setAddingNew] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [importModalOpen, setImportModalOpen] = useState(false)
+  const [importText, setImportText] = useState('')
+  const [importing, setImporting] = useState(false)
 
   useEffect(() => {
     api.get('/exercises').then(setAllExercises)
@@ -125,6 +129,50 @@ export default function SharedWorkoutLogger() {
       const newSets = isLast ? [...sets, makeSet(sets[setIdx])] : sets
       return { ...ex, sets: newSets }
     }))
+  }
+
+  async function handleImport() {
+    const { parsed, unrecognized } = parseClaudeTemplate(importText, allExercises)
+    if (parsed.length === 0) {
+      alert('No exercises found. Format: "Leg Press: 3x10 @ 150 / 40"')
+      return
+    }
+    setImporting(true)
+    try {
+      const created = []
+      for (const entry of parsed) {
+        let exerciseId = entry.exerciseId
+        let exerciseName = entry.exerciseName
+        if (exerciseId === null) {
+          const ex = await api.post('/exercises', { name: exerciseName, muscle_group: 'other' })
+          exerciseId = ex.id
+          exerciseName = ex.name
+          created.push(ex)
+        }
+        setLoggedExercises(prev => {
+          if (prev.find(e => e.exerciseId === exerciseId)) return prev
+          return [...prev, {
+            exerciseId,
+            exerciseName,
+            sets: Array.from({ length: entry.sets }, () => ({
+              joe: { weight: entry.weight !== null ? String(entry.weight) : '', reps: String(entry.reps) },
+              partner: { weight: entry.partnerWeight !== null ? String(entry.partnerWeight) : (entry.weight !== null ? String(entry.weight) : ''), reps: String(entry.reps) },
+              confirmed: true,
+            })),
+          }]
+        })
+      }
+      if (created.length) setAllExercises(prev => [...prev, ...created])
+      setImportModalOpen(false)
+      setImportText('')
+      if (unrecognized.length > 0) {
+        alert(`Imported ${parsed.length} exercise(s). ${unrecognized.length} line(s) skipped.`)
+      }
+    } catch (err) {
+      alert('Import failed: ' + err.message)
+    } finally {
+      setImporting(false)
+    }
   }
 
   async function finish() {
@@ -226,6 +274,18 @@ export default function SharedWorkoutLogger() {
         </div>
       ))}
 
+      {loggedExercises.length === 0 && (
+        <button
+          style={{
+            border: '1px dashed #f7a76c55', borderRadius: 10, padding: 12, color: '#f7a76c',
+            fontSize: 13, cursor: 'pointer', width: '100%', marginBottom: 8, background: '#f7a76c10',
+          }}
+          onClick={() => setImportModalOpen(true)}
+        >
+          📋 Import from template (Joe / Sydney weights)
+        </button>
+      )}
+
       {showPicker ? (
         <>
           {showNewForm ? (
@@ -279,6 +339,35 @@ export default function SharedWorkoutLogger() {
       <button style={s.finishBtn} onClick={finish} disabled={saving}>
         {saving ? 'Saving...' : 'Finish Shared Workout'}
       </button>
+
+      {importModalOpen && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'flex-start', padding: '60px 16px 20px', zIndex: 100 }}>
+          <div style={{ background: '#1a1a2e', borderRadius: 12, padding: 20, width: '100%', maxWidth: 480, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ fontSize: 16, fontWeight: 700 }}>Import Shared Template</div>
+            <div style={{ fontSize: 12, color: '#888' }}>Format: "Leg Press: 3x10 @ 150 / 40" (Joe weight / Sydney weight)</div>
+            <textarea
+              style={{ background: '#252540', border: '1px solid #333', borderRadius: 8, padding: '10px 12px', color: '#fff', fontSize: 13, minHeight: 160, outline: 'none', resize: 'none', width: '100%' }}
+              value={importText}
+              onChange={e => setImportText(e.target.value)}
+              placeholder={'Leg Press: 3x10 @ 150 / 40\nChest Press Machine: 3x10 @ 100 / 55'}
+              aria-label="Paste shared template"
+            />
+            <button
+              style={{ background: '#7c6af7', border: 'none', borderRadius: 10, padding: 13, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
+              onClick={handleImport}
+              disabled={importing || !importText.trim()}
+            >
+              {importing ? 'Importing...' : 'Import'}
+            </button>
+            <button
+              style={{ background: 'none', border: 'none', color: '#7c6af7', fontSize: 13, cursor: 'pointer', padding: 8 }}
+              onClick={() => { setImportModalOpen(false); setImportText('') }}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

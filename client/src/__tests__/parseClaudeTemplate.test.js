@@ -17,6 +17,7 @@ describe('parseClaudeTemplate', () => {
       sets: 3,
       reps: 8,
       weight: 185,
+      partnerWeight: null,
     })
     expect(unrecognized).toHaveLength(0)
   })
@@ -70,5 +71,17 @@ describe('parseClaudeTemplate', () => {
   it('handles decimal weights', () => {
     const { parsed } = parseClaudeTemplate('Bench Press: 3x8 @ 135.5', exercises)
     expect(parsed[0].weight).toBe(135.5)
+  })
+
+  it('parses dual-weight format for partner workouts', () => {
+    const { parsed } = parseClaudeTemplate('Leg Press: 3x10 @ 150 / 40', exercises)
+    expect(parsed[0].weight).toBe(150)
+    expect(parsed[0].partnerWeight).toBe(40)
+    expect(parsed[0].reps).toBe(10)
+  })
+
+  it('sets partnerWeight to null for single-weight lines', () => {
+    const { parsed } = parseClaudeTemplate('Bench Press: 3x8 @ 185', exercises)
+    expect(parsed[0].partnerWeight).toBeNull()
   })
 })
