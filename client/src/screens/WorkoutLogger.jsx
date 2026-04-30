@@ -59,13 +59,12 @@ export default function WorkoutLogger() {
   const [mobilityPickerExId, setMobilityPickerExId] = useState('')
   const [mobilityDurationInput, setMobilityDurationInput] = useState('')
   const [workoutNotes, setWorkoutNotes] = useState('')
-  const [importModalOpen, setImportModalOpen] = useState(false)
   const [importText, setImportText] = useState('')
   const [importing, setImporting] = useState(false)
+  const [pasteExpanded, setPasteExpanded] = useState(false)
   const [weightModalDone, setWeightModalDone] = useState(false)
   const [weightInput, setWeightInput] = useState('')
   const [routines, setRoutines] = useState([])
-  const [templateModalOpen, setTemplateModalOpen] = useState(false)
   const [loadingTemplate, setLoadingTemplate] = useState(false)
 
   useEffect(() => {
@@ -206,7 +205,7 @@ export default function WorkoutLogger() {
       if (createdExercises.length > 0) {
         setAllExercises(prev => [...prev, ...createdExercises])
       }
-      setImportModalOpen(false)
+      setPasteExpanded(false)
       setImportText('')
       if (unrecognized.length > 0) {
         alert(`Imported ${parsed.length} exercise(s). ${unrecognized.length} line(s) couldn't be parsed.`)
@@ -224,9 +223,12 @@ export default function WorkoutLogger() {
       setLoggedExercises(routine.exercises.map(ex => ({
         exerciseId: ex.id,
         exerciseName: ex.name,
-        sets: Array.from({ length: ex.default_sets ?? 3 }, () => makeSet()),
+        sets: Array.from({ length: ex.default_sets ?? 3 }, () => ({
+          weight: ex.default_weight_lbs ? String(ex.default_weight_lbs) : '',
+          reps: String(ex.default_reps ?? 10),
+          confirmed: false,
+        })),
       })))
-      setTemplateModalOpen(false)
     } finally {
       setLoadingTemplate(false)
     }
@@ -337,33 +339,62 @@ export default function WorkoutLogger() {
       {loggedExercises.length === 0 && (
         <>
           {routines.length > 0 && (
-            <button
-              style={{
-                border: '1px dashed #4caf8a55', borderRadius: 10, padding: 12, color: '#4caf8a',
-                fontSize: 13, cursor: 'pointer', width: '100%', marginBottom: 8, background: '#4caf8a10',
-              }}
-              onClick={() => setTemplateModalOpen(true)}
-            >
-              📅 Load Day A / B / C Template
-            </button>
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.5px', color: '#555', marginBottom: 8 }}>Start from template</div>
+              {routines.map(r => (
+                <button
+                  key={r.id}
+                  style={{ background: '#1a1a2e', border: '1px solid #252540', borderRadius: 10, padding: 12, color: '#fff', fontSize: 13, cursor: 'pointer', width: '100%', marginBottom: 6, textAlign: 'left' }}
+                  onClick={() => loadTemplate(r)}
+                  disabled={loadingTemplate}
+                >
+                  <div style={{ fontWeight: 600, color: '#4caf8a' }}>{r.name}</div>
+                  <div style={{ fontSize: 11, color: '#555', marginTop: 3 }}>{r.exercises.map(e => e.name).join(' · ')}</div>
+                </button>
+              ))}
+            </div>
           )}
-          <button
-            data-testid="import-banner-btn"
-            style={{
-              border: '1px dashed #4db6f755',
-              borderRadius: 10,
-              padding: 12,
-              color: '#4db6f7',
-              fontSize: 13,
-              cursor: 'pointer',
-              width: '100%',
-              marginBottom: 8,
-              background: '#4db6f710',
-            }}
-            onClick={() => setImportModalOpen(true)}
-          >
-            📋 Import from Claude template
-          </button>
+
+          {!pasteExpanded ? (
+            <button
+              data-testid="import-banner-btn"
+              style={{ border: '1px dashed #4db6f755', borderRadius: 10, padding: 12, color: '#4db6f7', fontSize: 13, cursor: 'pointer', width: '100%', marginBottom: 8, background: '#4db6f710' }}
+              onClick={() => setPasteExpanded(true)}
+            >
+              📋 Paste workout text
+            </button>
+          ) : (
+            <div style={{ background: '#1a1a2e', borderRadius: 10, padding: 14, marginBottom: 12 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: '#4db6f7', marginBottom: 8 }}>Paste workout text</div>
+              <div style={{ fontSize: 12, color: '#888', marginBottom: 8 }}>Format: "Exercise Name: 3x8 @ 185"</div>
+              <textarea
+                aria-label="Paste Claude template"
+                style={{ background: '#252540', border: '1px solid #333', borderRadius: 8, padding: '10px 12px', color: '#fff', fontSize: 13, minHeight: 120, outline: 'none', resize: 'none', width: '100%', marginBottom: 8 }}
+                value={importText}
+                onChange={e => setImportText(e.target.value)}
+                placeholder={'Bench Press: 3x8 @ 185\nSquat: 3x5 @ 225\nPull-up: 3x8'}
+                autoFocus
+              />
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button
+                  data-testid="import-submit-btn"
+                  style={{ flex: 1, background: '#7c6af7', border: 'none', borderRadius: 10, padding: 11, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+                  onClick={handleImport}
+                  disabled={importing || !importText.trim()}
+                >
+                  {importing ? 'Importing...' : 'Import'}
+                </button>
+                <button
+                  data-testid="import-cancel-btn"
+                  style={{ background: 'none', border: 'none', color: '#7c6af7', fontSize: 13, cursor: 'pointer', padding: '11px 8px' }}
+                  onClick={() => { setPasteExpanded(false); setImportText('') }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+
           <div style={{ textAlign: 'center', color: '#555', fontSize: 12, marginBottom: 12 }}>
             — or add exercises below —
           </div>
@@ -492,76 +523,6 @@ export default function WorkoutLogger() {
         {saving ? 'Saving...' : 'Finish Workout'}
       </button>
 
-      {templateModalOpen && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'flex-start', padding: '60px 16px 20px', zIndex: 100 }}>
-          <div style={{ background: '#1a1a2e', borderRadius: 12, padding: 20, width: '100%', maxWidth: 480, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <div style={{ fontSize: 16, fontWeight: 700 }}>Choose Template</div>
-            {routines.map(r => (
-              <button
-                key={r.id}
-                style={{ background: '#252540', border: '1px solid #333', borderRadius: 10, padding: 14, color: '#fff', fontSize: 14, cursor: 'pointer', textAlign: 'left' }}
-                onClick={() => loadTemplate(r)}
-                disabled={loadingTemplate}
-              >
-                <div style={{ fontWeight: 600 }}>{r.name}</div>
-                <div style={{ fontSize: 11, color: '#666', marginTop: 4 }}>
-                  {r.exercises.map(e => e.name).join(' · ')}
-                </div>
-              </button>
-            ))}
-            <button
-              style={{ background: 'none', border: 'none', color: '#7c6af7', fontSize: 13, cursor: 'pointer', padding: 8 }}
-              onClick={() => setTemplateModalOpen(false)}
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
-
-      {importModalOpen && (
-        <div
-          data-testid="import-modal"
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0,0,0,0.85)',
-            display: 'flex',
-            alignItems: 'flex-start',
-            padding: '60px 16px 20px',
-            zIndex: 100,
-          }}
-        >
-          <div style={{ background: '#1a1a2e', borderRadius: 12, padding: 20, width: '100%', maxWidth: 480, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div style={{ fontSize: 16, fontWeight: 700 }}>Import Claude Template</div>
-            <div style={{ fontSize: 12, color: '#888' }}>
-              Paste the workout template Claude generated for you:
-            </div>
-            <textarea
-              aria-label="Paste Claude template"
-              style={{ background: '#252540', border: '1px solid #333', borderRadius: 8, padding: '10px 12px', color: '#fff', fontSize: 13, minHeight: 160, outline: 'none', resize: 'none', width: '100%' }}
-              value={importText}
-              onChange={e => setImportText(e.target.value)}
-              placeholder={'Bench Press: 3x8 @ 185\nSquat: 3x5 @ 225\nPull-up: 3x8'}
-            />
-            <button
-              data-testid="import-submit-btn"
-              style={{ background: '#7c6af7', border: 'none', borderRadius: 10, padding: 13, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
-              onClick={handleImport}
-              disabled={importing || !importText.trim()}
-            >
-              {importing ? 'Importing...' : 'Import'}
-            </button>
-            <button
-              data-testid="import-cancel-btn"
-              style={{ background: 'none', border: 'none', color: '#7c6af7', fontSize: 13, cursor: 'pointer', padding: 8 }}
-              onClick={() => { setImportModalOpen(false); setImportText('') }}
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
