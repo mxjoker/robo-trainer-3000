@@ -11,6 +11,7 @@ const MIGRATIONS = [
   '005_add_photo_url.sql',
   '006_add_routine_defaults.sql',
   '007_add_notification_utc_offset.sql',
+  '008_add_exercise_type.sql',
 ]
 
 async function migrate() {

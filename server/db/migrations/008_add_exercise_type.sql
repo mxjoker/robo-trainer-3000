@@ -1,0 +1,107 @@
+-- Migration 008: Add exercise_type column + replace global exercise seed with YMCA list
+
+ALTER TABLE exercises ADD COLUMN IF NOT EXISTS exercise_type VARCHAR(20);
+
+-- Detach sets that reference old global exercises (preserves set records, just loses exercise name link)
+UPDATE sets SET exercise_id = NULL
+WHERE exercise_id IN (SELECT id FROM exercises WHERE created_by IS NULL);
+
+-- Clear routine_exercises references to global exercises before deleting them
+DELETE FROM routine_exercises
+WHERE exercise_id IN (SELECT id FROM exercises WHERE created_by IS NULL);
+
+-- Remove old global exercises
+DELETE FROM exercises WHERE created_by IS NULL;
+
+-- Insert full YMCA exercise list
+-- Machine exercises
+INSERT INTO exercises (name, muscle_group, exercise_type, is_pt_exercise) VALUES
+  ('Chest Press Machine', 'chest', 'machine', false),
+  ('Shoulder Press Machine', 'shoulders', 'machine', false),
+  ('Lat Pulldown', 'back', 'machine', false),
+  ('Seated Row Machine', 'back', 'machine', false),
+  ('Bicep Curl Machine', 'arms', 'machine', false),
+  ('Tricep Press Machine', 'arms', 'machine', false),
+  ('Rear Delt Machine', 'back', 'machine', false),
+  ('Pec Fly Machine', 'chest', 'machine', false),
+  ('Ab Crunch Machine', 'core', 'machine', false),
+  ('Back Extension Machine', 'back', 'machine', false),
+  ('Leg Press', 'legs', 'machine', false),
+  ('Seated Leg Curl Machine', 'legs', 'machine', false),
+  ('Prone Leg Curl Machine', 'legs', 'machine', false),
+  ('Leg Extension Machine', 'legs', 'machine', false),
+  ('Hip Adductor Machine', 'legs', 'machine', false),
+  ('Seated Hip Abduction Machine', 'legs', 'machine', false),
+  ('Glute Drive Machine', 'legs', 'machine', false),
+  ('Assisted Dip/Chin Machine', 'back', 'machine', false),
+  ('Low Row (Precor)', 'back', 'machine', false),
+  ('Super Squat (Precor)', 'legs', 'machine', false),
+  ('Angled Hack Squat', 'legs', 'machine', false),
+  ('Stationary Bike', 'other', 'machine', false),
+
+-- Cable exercises
+  ('Cable Tricep Pushdown (Rope)', 'arms', 'cable', false),
+  ('Cable Tricep Pushdown (Bar)', 'arms', 'cable', false),
+  ('Cable Bicep Curl', 'arms', 'cable', false),
+  ('Cable Fly', 'chest', 'cable', false),
+  ('Cable Crossover Fly', 'chest', 'cable', false),
+  ('Cable Kickback', 'legs', 'cable', false),
+  ('Cable External Rotation', 'shoulders', 'cable', false),
+  ('Cable Internal Rotation', 'shoulders', 'cable', false),
+  ('Cable Lateral Raise', 'shoulders', 'cable', false),
+  ('Face Pull', 'back', 'cable', false),
+  ('Pallof Press', 'core', 'cable', false),
+  ('Cable Woodchop', 'core', 'cable', false),
+  ('Cable Press (Short Range)', 'core', 'cable', false),
+  ('Cable Pull-Through', 'legs', 'cable', false),
+  ('Cable Row', 'back', 'cable', false),
+
+-- Free weight exercises
+  ('Incline Dumbbell Press', 'chest', 'free_weight', false),
+  ('Dumbbell Bench Press', 'chest', 'free_weight', false),
+  ('Dumbbell Shoulder Press', 'shoulders', 'free_weight', false),
+  ('Lateral Raise (Dumbbell)', 'shoulders', 'free_weight', false),
+  ('Front Raise (Dumbbell)', 'shoulders', 'free_weight', false),
+  ('Dumbbell Serratus Punch', 'chest', 'free_weight', false),
+  ('Dumbbell Row', 'back', 'free_weight', false),
+  ('Dumbbell Fly', 'chest', 'free_weight', false),
+  ('Dumbbell Shrug', 'back', 'free_weight', false),
+  ('Romanian Deadlift (Dumbbell)', 'legs', 'free_weight', false),
+  ('Dumbbell Lunge', 'legs', 'free_weight', false),
+  ('Dumbbell Step-Ups', 'legs', 'free_weight', false),
+  ('Goblet Squat', 'legs', 'free_weight', false),
+  ('Dumbbell Bicep Curl', 'arms', 'free_weight', false),
+  ('Hammer Curl', 'arms', 'free_weight', false),
+  ('Dumbbell Tricep Overhead Extension', 'arms', 'free_weight', false),
+  ('Dumbbell Skull Crusher', 'arms', 'free_weight', false),
+  ('Barbell Bench Press', 'chest', 'free_weight', false),
+  ('Barbell Squat', 'legs', 'free_weight', false),
+  ('Barbell Deadlift', 'legs', 'free_weight', false),
+  ('Barbell Romanian Deadlift', 'legs', 'free_weight', false),
+  ('Barbell Row', 'back', 'free_weight', false),
+  ('Barbell Overhead Press', 'shoulders', 'free_weight', false),
+  ('Preacher Curl', 'arms', 'free_weight', false),
+  ('EZ Bar Curl', 'arms', 'free_weight', false),
+
+-- Bodyweight exercises
+  ('Push-Up', 'chest', 'bodyweight', false),
+  ('Pull-Up', 'back', 'bodyweight', false),
+  ('Chin-Up', 'back', 'bodyweight', false),
+  ('Plank', 'core', 'bodyweight', false),
+  ('Side Plank', 'core', 'bodyweight', false),
+  ('Dead Bug', 'core', 'bodyweight', false),
+  ('Bird Dog', 'core', 'bodyweight', false),
+  ('Glute Bridge (Bodyweight)', 'legs', 'bodyweight', false),
+  ('Side-Lying Hip Abduction', 'legs', 'bodyweight', false),
+  ('Clamshells (Band)', 'legs', 'bodyweight', false),
+  ('Band Pull-Aparts', 'back', 'bodyweight', false),
+  ('Band External Rotation', 'shoulders', 'bodyweight', false),
+  ('Step-Ups (Bodyweight)', 'legs', 'bodyweight', false),
+  ('TRX Row', 'back', 'bodyweight', false),
+  ('Medicine Ball Rotation', 'core', 'bodyweight', false)
+
+ON CONFLICT (name) DO UPDATE SET
+  exercise_type = EXCLUDED.exercise_type,
+  muscle_group = EXCLUDED.muscle_group,
+  is_pt_exercise = EXCLUDED.is_pt_exercise,
+  created_by = NULL;
