@@ -5,7 +5,7 @@ const tabs = [
   { to: '/stats', label: 'Stats', icon: '↗' },
   { to: '/photos', label: 'Photos', icon: '📷' },
   { to: '/partner', label: 'Partner', icon: '⊕' },
-  { to: '/settings', label: 'Settings', icon: '⚙' },
+  { to: '/profile', label: 'Profile', icon: '◉' },
 ]
 
 const s = {
