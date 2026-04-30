@@ -9,7 +9,7 @@ async function getRoutineWithExercises(routineId) {
   const routine = (await pool.query('SELECT * FROM routines WHERE id = $1', [routineId])).rows[0]
   if (!routine) return null
   const exercises = (await pool.query(
-    `SELECT e.*, re.sort_order, re.default_sets, re.default_reps FROM exercises e
+    `SELECT e.*, re.sort_order, re.default_sets, re.default_reps, re.default_weight_lbs FROM exercises e
      JOIN routine_exercises re ON re.exercise_id = e.id
      WHERE re.routine_id = $1 ORDER BY re.sort_order`,
     [routineId]
@@ -119,35 +119,48 @@ router.post('/seed-defaults', async (req, res) => {
     {
       name: 'Day A — Push + Core',
       exercises: [
-        { name: 'Leg Press', sets: 3, reps: 10 },
-        { name: 'Chest Press Machine', sets: 3, reps: 10 },
-        { name: 'Shoulder Press Machine', sets: 3, reps: 10 },
-        { name: 'Cable Tricep Pushdown', sets: 3, reps: 12 },
-        { name: 'Ab Crunch Machine', sets: 3, reps: 8 },
-        { name: 'Pallof Press', sets: 3, reps: 10 },
+        { name: 'Chest Press Machine', sets: 3, reps: 10, weight: 40 },
+        { name: 'Incline Dumbbell Press', sets: 3, reps: 10, weight: 15 },
+        { name: 'Cable Tricep Pushdown (Rope)', sets: 3, reps: 10, weight: 30 },
+        { name: 'Lateral Raise (Dumbbell)', sets: 3, reps: 12, weight: 5 },
+        { name: 'Ab Crunch Machine', sets: 3, reps: 12, weight: 50 },
+        { name: 'Pallof Press', sets: 3, reps: 10, weight: 20 },
       ],
     },
     {
       name: 'Day B — Pull + Hinge',
       exercises: [
-        { name: 'Romanian Deadlift', sets: 3, reps: 10 },
-        { name: 'Seated Leg Curl Machine', sets: 3, reps: 12 },
-        { name: 'Seated Row', sets: 3, reps: 10 },
-        { name: 'Lat Pulldown', sets: 3, reps: 10 },
-        { name: 'Rear Delt Machine', sets: 3, reps: 15 },
-        { name: 'Bicep Curl Machine', sets: 3, reps: 12 },
+        { name: 'Lat Pulldown', sets: 3, reps: 10, weight: 50 },
+        { name: 'Seated Row Machine', sets: 3, reps: 10, weight: 40 },
+        { name: 'Romanian Deadlift (Dumbbell)', sets: 3, reps: 10, weight: 20 },
+        { name: 'Seated Leg Curl Machine', sets: 3, reps: 12, weight: 30 },
+        { name: 'Rear Delt Machine', sets: 3, reps: 12, weight: 10 },
+        { name: 'Bicep Curl Machine', sets: 3, reps: 10, weight: 25 },
+        { name: 'Pallof Press', sets: 3, reps: 10, weight: 20 },
       ],
     },
     {
-      name: 'Day C — Glutes + Arms',
+      name: 'Day C — Lower Focus',
       exercises: [
-        { name: 'Glute Drive Machine', sets: 3, reps: 12 },
-        { name: 'Cable Kickback', sets: 3, reps: 12 },
-        { name: 'Hip Abductor Machine', sets: 3, reps: 15 },
-        { name: 'Step Ups', sets: 3, reps: 10 },
-        { name: 'Bicep Curl Machine', sets: 3, reps: 12 },
-        { name: 'Cable Tricep Pushdown', sets: 3, reps: 12 },
-        { name: 'Cable Woodchop', sets: 3, reps: 10 },
+        { name: 'Leg Press', sets: 3, reps: 10, weight: 70 },
+        { name: 'Glute Drive Machine', sets: 3, reps: 10, weight: 70 },
+        { name: 'Seated Hip Abduction Machine', sets: 3, reps: 12, weight: 60 },
+        { name: 'Cable Kickback', sets: 3, reps: 12, weight: 15 },
+        { name: 'Bicep Curl Machine', sets: 3, reps: 10, weight: 25 },
+        { name: 'Cable Tricep Pushdown (Rope)', sets: 3, reps: 10, weight: 30 },
+        { name: 'Ab Crunch Machine', sets: 3, reps: 12, weight: 50 },
+      ],
+    },
+    {
+      name: 'Day D — Stability + Accessories',
+      exercises: [
+        { name: 'Pallof Press', sets: 3, reps: 10, weight: 20 },
+        { name: 'Dumbbell Serratus Punch', sets: 3, reps: 12, weight: 10 },
+        { name: 'Face Pull', sets: 3, reps: 12, weight: 20 },
+        { name: 'Side Plank', sets: 3, reps: 20, weight: 0 },
+        { name: 'Side-Lying Hip Abduction', sets: 3, reps: 12, weight: 0 },
+        { name: 'Cable External Rotation', sets: 3, reps: 10, weight: 10 },
+        { name: 'Cable Press (Short Range)', sets: 3, reps: 10, weight: 20 },
       ],
     },
   ]
@@ -157,7 +170,7 @@ router.post('/seed-defaults', async (req, res) => {
       "SELECT id FROM routines WHERE user_id = $1 AND name LIKE 'Day %'",
       [userId]
     )
-    if (existing.rows.length >= 3) {
+    if (existing.rows.length >= 4) {
       return res.json({ message: 'Already seeded', routines: existing.rows })
     }
 
@@ -175,7 +188,7 @@ router.post('/seed-defaults', async (req, res) => {
            RETURNING id`,
           [ex.name]
         )
-        exerciseIds.push({ id: rows[0].id, sets: ex.sets, reps: ex.reps })
+        exerciseIds.push({ id: rows[0].id, sets: ex.sets, reps: ex.reps, weight: ex.weight ?? 0 })
       }
 
       const { rows: routineRows } = await client.query(
@@ -185,11 +198,11 @@ router.post('/seed-defaults', async (req, res) => {
       const routine = routineRows[0]
 
       for (let i = 0; i < exerciseIds.length; i++) {
-        const { id, sets, reps } = exerciseIds[i]
+        const { id, sets, reps, weight } = exerciseIds[i]
         await client.query(
-          `INSERT INTO routine_exercises (routine_id, exercise_id, sort_order, default_sets, default_reps)
-           VALUES ($1, $2, $3, $4, $5)`,
-          [routine.id, id, i, sets, reps]
+          `INSERT INTO routine_exercises (routine_id, exercise_id, sort_order, default_sets, default_reps, default_weight_lbs)
+           VALUES ($1, $2, $3, $4, $5, $6)`,
+          [routine.id, id, i, sets, reps, weight]
         )
       }
       created.push(routine)

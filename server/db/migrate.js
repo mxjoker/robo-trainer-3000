@@ -12,6 +12,7 @@ const MIGRATIONS = [
   '006_add_routine_defaults.sql',
   '007_add_notification_utc_offset.sql',
   '008_add_exercise_type.sql',
+  '009_routine_weight_and_4day.sql',
 ]
 
 async function migrate() {
