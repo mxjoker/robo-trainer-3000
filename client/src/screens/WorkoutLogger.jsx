@@ -296,23 +296,6 @@ export default function WorkoutLogger() {
 
       {forPartner && <div style={s.pill}>Logging for partner</div>}
 
-      {routines.length > 0 && (
-        <div style={{ display: 'flex', gap: 6, marginBottom: 16, flexWrap: 'wrap' }}>
-          {routines.map(r => (
-            <button
-              key={r.id}
-              style={{ background: '#252540', border: '1px solid #333', borderRadius: 20, padding: '6px 14px', color: '#a090ff', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
-              onClick={() => {
-                if (loggedExercises.length > 0 && !window.confirm('Replace current exercises with this template?')) return
-                loadTemplate(r)
-              }}
-            >
-              {r.name.replace(/\s*—.*/, '')}
-            </button>
-          ))}
-        </div>
-      )}
-
       {loggedExercises.map((ex, exIdx) => (
         <div key={ex.exerciseId} style={s.exerciseCard}>
           <div style={s.exerciseName}>{ex.exerciseName}</div>
@@ -349,6 +332,23 @@ export default function WorkoutLogger() {
 
       {loggedExercises.length === 0 && (
         <>
+          {routines.length > 0 && (
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.5px', color: '#555', marginBottom: 8 }}>Load a template</div>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {routines.map(r => (
+                  <button
+                    key={r.id}
+                    style={{ background: '#1a1a2e', border: '1px solid #252540', borderRadius: 10, padding: '10px 14px', color: '#a090ff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+                    onClick={() => loadTemplate(r)}
+                  >
+                    {r.name.replace(/\s*—.*/, '')}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {!pasteExpanded ? (
             <button
               data-testid="import-banner-btn"
