@@ -1,7 +1,7 @@
 {
   "name": "robo-trainer-3000",
   "version": "1.0.0",
-  "private": true,
+  "license": "MIT",
   "scripts": {
     "dev:server": "cd server && npm run dev",
     "dev:client": "cd client && npm run dev",
