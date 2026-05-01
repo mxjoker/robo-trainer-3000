@@ -55,5 +55,29 @@ module.exports = async function globalSetup() {
   )
   await pool.query(sql5)
 
+  const sql6 = fs.readFileSync(
+    path.join(__dirname, '../db/migrations/006_add_routine_defaults.sql'),
+    'utf8'
+  )
+  await pool.query(sql6)
+
+  const sql7 = fs.readFileSync(
+    path.join(__dirname, '../db/migrations/007_add_notification_utc_offset.sql'),
+    'utf8'
+  )
+  await pool.query(sql7)
+
+  const sql8 = fs.readFileSync(
+    path.join(__dirname, '../db/migrations/008_add_exercise_type.sql'),
+    'utf8'
+  )
+  await pool.query(sql8)
+
+  const sql9 = fs.readFileSync(
+    path.join(__dirname, '../db/migrations/009_routine_weight_and_4day.sql'),
+    'utf8'
+  )
+  await pool.query(sql9)
+
   await pool.end()
 }

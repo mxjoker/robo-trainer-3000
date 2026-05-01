@@ -7,6 +7,8 @@ import Dashboard from './pages/Dashboard'
 import Stats from './pages/Stats'
 import Partner from './pages/Partner'
 import Settings from './pages/Settings'
+import Profile from './pages/Profile'
+import ExerciseManager from './pages/ExerciseManager'
 import Photos from './pages/Photos'
 import WorkoutLogger from './screens/WorkoutLogger'
 import SharedWorkoutLogger from './screens/SharedWorkoutLogger'
@@ -28,7 +30,9 @@ function ProtectedLayout() {
           <Route path="/stats" element={<Stats />} />
           <Route path="/photos" element={<Photos />} />
           <Route path="/partner" element={<Partner />} />
-          <Route path="/settings" element={<Settings />} />
+          <Route path="/settings" element={<Navigate to="/profile" />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/exercises" element={<ExerciseManager />} />
           <Route path="/log/workout" element={<WorkoutLogger />} />
           <Route path="/log/workout/shared" element={<SharedWorkoutLogger />} />
           <Route path="/log/wellness" element={<WellnessLogger />} />
