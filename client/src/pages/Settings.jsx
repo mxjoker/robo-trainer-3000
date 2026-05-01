@@ -28,6 +28,10 @@ export default function Settings() {
   const [exportFormat, setExportFormat] = useState('csv')
   const [exporting, setExporting] = useState(false)
   const [seeding, setSeeding] = useState(false)
+  const [routines, setRoutines] = useState([])
+  const [allExercises, setAllExercises] = useState([])
+  const [addExMap, setAddExMap] = useState({})
+  const [savingRoutine, setSavingRoutine] = useState({})
   const [testingSend, setTestingSend] = useState(false)
   const [notifPrefs, setNotifPrefs] = useState({
     water_enabled: false, water_interval_hours: 2, water_start_hour: 8, water_end_hour: 20,
@@ -50,6 +54,8 @@ export default function Settings() {
 
   useEffect(() => {
     api.get('/notifications/preferences').then(setNotifPrefs).catch(() => {})
+    api.get('/routines').then(setRoutines).catch(() => {})
+    api.get('/exercises').then(setAllExercises).catch(() => {})
   }, [])
 
   useEffect(() => () => clearTimeout(copyTimerRef.current), [])
@@ -105,11 +111,39 @@ export default function Settings() {
     setSeeding(true)
     try {
       await api.post('/routines/seed-defaults')
-      alert("Day A/B/C templates loaded! They'll appear when you start a workout.")
+      const updated = await api.get('/routines')
+      setRoutines(updated)
     } catch {
       alert('Failed to load templates.')
     } finally {
       setSeeding(false)
+    }
+  }
+
+  async function removeExercise(routineId, exerciseId) {
+    const routine = routines.find(r => r.id === routineId)
+    const exerciseIds = routine.exercises.filter(e => e.id !== exerciseId).map(e => e.id)
+    setSavingRoutine(p => ({ ...p, [routineId]: true }))
+    try {
+      const updated = await api.put(`/routines/${routineId}`, { exerciseIds })
+      setRoutines(prev => prev.map(r => r.id === routineId ? updated : r))
+    } finally {
+      setSavingRoutine(p => ({ ...p, [routineId]: false }))
+    }
+  }
+
+  async function addExercise(routineId) {
+    const exId = Number(addExMap[routineId])
+    if (!exId) return
+    const routine = routines.find(r => r.id === routineId)
+    const exerciseIds = [...routine.exercises.map(e => e.id), exId]
+    setSavingRoutine(p => ({ ...p, [routineId]: true }))
+    try {
+      const updated = await api.put(`/routines/${routineId}`, { exerciseIds })
+      setRoutines(prev => prev.map(r => r.id === routineId ? updated : r))
+      setAddExMap(p => ({ ...p, [routineId]: '' }))
+    } finally {
+      setSavingRoutine(p => ({ ...p, [routineId]: false }))
     }
   }
 
@@ -236,12 +270,53 @@ export default function Settings() {
 
       <div style={s.section}>
         <div style={s.sectionLabel}>Workout Templates</div>
-        <div style={s.card}>
-          <button style={s.btn()} onClick={seedDefaults} disabled={seeding}>
-            {seeding ? 'Loading...' : 'Load Day A / B / C Templates'}
-          </button>
-          <div style={s.hint}>Pre-fills Days A, B, C with standard exercises. Weights still entered live.</div>
-        </div>
+        {routines.length === 0 ? (
+          <div style={s.card}>
+            <button style={s.btn()} onClick={seedDefaults} disabled={seeding}>
+              {seeding ? 'Loading...' : 'Load Day A / B / C Defaults'}
+            </button>
+            <div style={s.hint}>Pre-fills Days A, B, C with standard exercises.</div>
+          </div>
+        ) : (
+          <>
+            {routines.map(routine => (
+              <div key={routine.id} style={{ ...s.card, marginBottom: 12 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 10 }}>{routine.name}</div>
+                {routine.exercises.map(ex => (
+                  <div key={ex.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                    <span style={{ fontSize: 13, color: '#ccc' }}>{ex.name}</span>
+                    <button
+                      style={{ background: 'none', border: 'none', color: '#555', cursor: 'pointer', fontSize: 18, lineHeight: 1, padding: '0 4px' }}
+                      onClick={() => removeExercise(routine.id, ex.id)}
+                      disabled={savingRoutine[routine.id]}
+                      aria-label={`Remove ${ex.name}`}
+                    >×</button>
+                  </div>
+                ))}
+                <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                  <select
+                    style={{ flex: 1, background: '#252540', border: '1px solid #333', borderRadius: 8, padding: '8px 10px', color: '#fff', fontSize: 13, outline: 'none' }}
+                    value={addExMap[routine.id] || ''}
+                    onChange={e => setAddExMap(p => ({ ...p, [routine.id]: e.target.value }))}
+                  >
+                    <option value="">Add exercise…</option>
+                    {allExercises
+                      .filter(e => !routine.exercises.find(re => re.id === e.id))
+                      .map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
+                  </select>
+                  <button
+                    style={{ background: '#7c6af7', border: 'none', borderRadius: 8, padding: '8px 14px', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+                    onClick={() => addExercise(routine.id)}
+                    disabled={!addExMap[routine.id] || savingRoutine[routine.id]}
+                  >Add</button>
+                </div>
+              </div>
+            ))}
+            <button style={{ ...s.btn('#252540'), fontSize: 12 }} onClick={seedDefaults} disabled={seeding}>
+              {seeding ? 'Loading...' : 'Reset to Defaults'}
+            </button>
+          </>
+        )}
       </div>
 
       <div style={s.section}>

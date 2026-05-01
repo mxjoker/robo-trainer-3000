@@ -65,8 +65,6 @@ export default function WorkoutLogger() {
   const [weightModalDone, setWeightModalDone] = useState(false)
   const [weightInput, setWeightInput] = useState('')
   const [routines, setRoutines] = useState([])
-  const [templateModalOpen, setTemplateModalOpen] = useState(false)
-  const [loadingTemplate, setLoadingTemplate] = useState(false)
 
   useEffect(() => {
     api.get('/exercises').then(setAllExercises)
@@ -219,17 +217,11 @@ export default function WorkoutLogger() {
   }
 
   function loadTemplate(routine) {
-    setLoadingTemplate(true)
-    try {
-      setLoggedExercises(routine.exercises.map(ex => ({
-        exerciseId: ex.id,
-        exerciseName: ex.name,
-        sets: Array.from({ length: ex.default_sets ?? 3 }, () => makeSet()),
-      })))
-      setTemplateModalOpen(false)
-    } finally {
-      setLoadingTemplate(false)
-    }
+    setLoggedExercises(routine.exercises.map(ex => ({
+      exerciseId: ex.id,
+      exerciseName: ex.name,
+      sets: Array.from({ length: ex.default_sets ?? 3 }, () => makeSet()),
+    })))
   }
 
   async function submitWeight() {
@@ -300,6 +292,23 @@ export default function WorkoutLogger() {
 
       {forPartner && <div style={s.pill}>Logging for partner</div>}
 
+      {routines.length > 0 && (
+        <div style={{ display: 'flex', gap: 6, marginBottom: 16, flexWrap: 'wrap' }}>
+          {routines.map(r => (
+            <button
+              key={r.id}
+              style={{ background: '#252540', border: '1px solid #333', borderRadius: 20, padding: '6px 14px', color: '#a090ff', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+              onClick={() => {
+                if (loggedExercises.length > 0 && !window.confirm('Replace current exercises with this template?')) return
+                loadTemplate(r)
+              }}
+            >
+              {r.name.replace(/\s*—.*/, '')}
+            </button>
+          ))}
+        </div>
+      )}
+
       {loggedExercises.map((ex, exIdx) => (
         <div key={ex.exerciseId} style={s.exerciseCard}>
           <div style={s.exerciseName}>{ex.exerciseName}</div>
@@ -336,17 +345,6 @@ export default function WorkoutLogger() {
 
       {loggedExercises.length === 0 && (
         <>
-          {routines.length > 0 && (
-            <button
-              style={{
-                border: '1px dashed #4caf8a55', borderRadius: 10, padding: 12, color: '#4caf8a',
-                fontSize: 13, cursor: 'pointer', width: '100%', marginBottom: 8, background: '#4caf8a10',
-              }}
-              onClick={() => setTemplateModalOpen(true)}
-            >
-              📅 Load Day A / B / C Template
-            </button>
-          )}
           <button
             data-testid="import-banner-btn"
             style={{
@@ -491,33 +489,6 @@ export default function WorkoutLogger() {
       <button style={s.finishBtn} onClick={finish} disabled={saving}>
         {saving ? 'Saving...' : 'Finish Workout'}
       </button>
-
-      {templateModalOpen && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'flex-start', padding: '60px 16px 20px', zIndex: 100 }}>
-          <div style={{ background: '#1a1a2e', borderRadius: 12, padding: 20, width: '100%', maxWidth: 480, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <div style={{ fontSize: 16, fontWeight: 700 }}>Choose Template</div>
-            {routines.map(r => (
-              <button
-                key={r.id}
-                style={{ background: '#252540', border: '1px solid #333', borderRadius: 10, padding: 14, color: '#fff', fontSize: 14, cursor: 'pointer', textAlign: 'left' }}
-                onClick={() => loadTemplate(r)}
-                disabled={loadingTemplate}
-              >
-                <div style={{ fontWeight: 600 }}>{r.name}</div>
-                <div style={{ fontSize: 11, color: '#666', marginTop: 4 }}>
-                  {r.exercises.map(e => e.name).join(' · ')}
-                </div>
-              </button>
-            ))}
-            <button
-              style={{ background: 'none', border: 'none', color: '#7c6af7', fontSize: 13, cursor: 'pointer', padding: 8 }}
-              onClick={() => setTemplateModalOpen(false)}
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
 
       {importModalOpen && (
         <div
