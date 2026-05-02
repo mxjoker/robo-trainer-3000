@@ -62,6 +62,9 @@ export default function Stats() {
   const [healthData, setHealthData] = useState([])
   const [consistency, setConsistency] = useState(null)
 
+  // My workouts feed
+  const [myWorkouts, setMyWorkouts] = useState([])
+
   // Partner data
   const [partnerPrs, setPartnerPrs] = useState([])
   const [partnerSelectedExId, setPartnerSelectedExId] = useState('')
@@ -69,6 +72,7 @@ export default function Stats() {
   const [partnerHealthFilter, setPartnerHealthFilter] = useState('30d')
   const [partnerHealthData, setPartnerHealthData] = useState([])
   const [partnerConsistency, setPartnerConsistency] = useState(null)
+  const [partnerWorkouts, setPartnerWorkouts] = useState([])
 
   // On mount: fetch my data + partner data (all independent so one failure doesn't block others)
   useEffect(() => {
@@ -78,6 +82,7 @@ export default function Stats() {
     }).catch(() => {})
     api.get('/stats/prs').then(setPrs).catch(() => {})
     api.get('/stats/consistency').then(setConsistency).catch(() => {})
+    api.get('/workouts').then(ws => setMyWorkouts(ws.slice(0, 5))).catch(() => {})
 
     api.get('/partner/profile').then(p => setPartnerName(p.name)).catch(() => {})
     api.get('/partner/stats/prs').then(pPrs => {
@@ -85,6 +90,7 @@ export default function Stats() {
       if (pPrs.length) setPartnerSelectedExId(String(pPrs[0].exercise_id))
     }).catch(() => {})
     api.get('/partner/stats/consistency').then(setPartnerConsistency).catch(() => {})
+    api.get('/partner/workouts').then(ws => setPartnerWorkouts(ws.slice(0, 5))).catch(() => {})
   }, [])
 
   // My strength chart
@@ -133,6 +139,7 @@ export default function Stats() {
   const activeHealthFilter = isPartner ? partnerHealthFilter : healthFilter
   const setActiveHealthFilter = isPartner ? setPartnerHealthFilter : setHealthFilter
   const activeHealthData = isPartner ? partnerHealthData : healthData
+  const activeWorkouts = isPartner ? partnerWorkouts : myWorkouts
 
   return (
     <div style={s.page}>
@@ -146,7 +153,7 @@ export default function Stats() {
       )}
 
       <div style={s.tabs}>
-        {['strength', 'health', 'consistency'].map(tab => (
+        {['strength', 'health', 'consistency', 'workouts'].map(tab => (
           <button key={tab} style={s.tab(activeTab === tab)} onClick={() => setActiveTab(tab)}>
             {tab.charAt(0).toUpperCase() + tab.slice(1)}
           </button>
@@ -246,6 +253,34 @@ export default function Stats() {
             </div>
           )}
         </div>
+      )}
+      {activeTab === 'workouts' && (
+        <>
+          {activeWorkouts.length === 0 && (
+            <div style={{ color: '#555', fontSize: 13, padding: '8px 0' }}>No workouts logged yet</div>
+          )}
+          {activeWorkouts.map(w => (
+            <div key={w.id} style={s.card}>
+              <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 4 }}>
+                {new Date(w.date.slice(0, 10) + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+              </div>
+              {w.notes && <div style={{ fontSize: 11, color: '#666', marginBottom: 4 }}>{w.notes}</div>}
+              {w.sets && [...new Set(w.sets.map(set => set.exercise_id))].map(exId => {
+                const exSets = w.sets.filter(set => set.exercise_id === exId)
+                return (
+                  <div key={exId}>
+                    <div style={{ fontSize: 12, color: '#888', marginTop: 6 }}>{exSets[0].exercise_name}</div>
+                    {exSets.map((set, i) => (
+                      <div key={i} style={{ fontSize: 11, color: '#555', marginLeft: 8 }}>
+                        Set {set.set_number}: {set.weight_lbs} lbs × {set.reps}
+                      </div>
+                    ))}
+                  </div>
+                )
+              })}
+            </div>
+          ))}
+        </>
       )}
     </div>
   )

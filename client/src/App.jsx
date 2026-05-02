@@ -5,7 +5,6 @@ import Register from './pages/Register'
 import AcceptInvite from './pages/AcceptInvite'
 import Dashboard from './pages/Dashboard'
 import Stats from './pages/Stats'
-import Partner from './pages/Partner'
 import Settings from './pages/Settings'
 import Profile from './pages/Profile'
 import ExerciseManager from './pages/ExerciseManager'
@@ -29,7 +28,6 @@ function ProtectedLayout() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/stats" element={<Stats />} />
           <Route path="/photos" element={<Photos />} />
-          <Route path="/partner" element={<Partner />} />
           <Route path="/settings" element={<Navigate to="/profile" />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/exercises" element={<ExerciseManager />} />

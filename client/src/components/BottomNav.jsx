@@ -4,7 +4,6 @@ const tabs = [
   { to: '/', label: 'Home', icon: '▣' },
   { to: '/stats', label: 'Stats', icon: '↗' },
   { to: '/photos', label: 'Photos', icon: '📷' },
-  { to: '/partner', label: 'Partner', icon: '⊕' },
   { to: '/profile', label: 'Profile', icon: '◉' },
 ]
 
