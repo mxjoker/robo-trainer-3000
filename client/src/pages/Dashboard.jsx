@@ -9,7 +9,7 @@ import CalendarGrid from '../components/CalendarGrid'
 import DaySheet from '../components/DaySheet'
 
 const s = {
-  page: { padding: '16px 0 100px', display: 'flex', flexDirection: 'column', gap: 12 },
+  page: { padding: '16px 8px 100px', display: 'flex', flexDirection: 'column', gap: 12 },
   header: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 },
   dayLabel: { fontSize: 22, fontWeight: 700, letterSpacing: '-0.5px' },
   dateLabel: { fontSize: 11, color: '#555', marginTop: 2 },
