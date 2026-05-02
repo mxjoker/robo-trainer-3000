@@ -73,9 +73,15 @@ export default function SharedWorkoutLogger() {
   const [weightModalDone, setWeightModalDone] = useState(false)
   const [joeWeightInput, setJoeWeightInput] = useState('')
   const [sydneyWeightInput, setSydneyWeightInput] = useState('')
+  const [routines, setRoutines] = useState([])
+  const [joePrs, setJoePrs] = useState({})
+  const [partnerPrs, setPartnerPrs] = useState({})
 
   useEffect(() => {
     api.get('/exercises').then(setAllExercises)
+    api.get('/routines').then(setRoutines).catch(() => {})
+    api.get('/exercises/prs').then(setJoePrs).catch(() => {})
+    api.get('/partner/exercises/prs').then(setPartnerPrs).catch(() => {})
     const today = new Date().toISOString().split('T')[0]
     Promise.all([
       api.post('/workouts', { date: today, is_shared: true }),
@@ -132,6 +138,24 @@ export default function SharedWorkoutLogger() {
       const newSets = isLast ? [...sets, makeSet(sets[setIdx])] : sets
       return { ...ex, sets: newSets }
     }))
+  }
+
+  function loadTemplate(routine) {
+    setLoggedExercises(routine.exercises.map(ex => ({
+      exerciseId: ex.id,
+      exerciseName: ex.name,
+      sets: Array.from({ length: ex.default_sets ?? 3 }, () => ({
+        joe: {
+          weight: joePrs[ex.id] != null ? String(joePrs[ex.id]) : (ex.default_weight_lbs ? String(ex.default_weight_lbs) : ''),
+          reps: String(ex.default_reps ?? 10),
+        },
+        partner: {
+          weight: partnerPrs[ex.id] != null ? String(partnerPrs[ex.id]) : '',
+          reps: String(ex.default_reps ?? 10),
+        },
+        confirmed: false,
+      })),
+    })))
   }
 
   async function submitWeights() {
@@ -319,15 +343,33 @@ export default function SharedWorkoutLogger() {
       ))}
 
       {loggedExercises.length === 0 && (
-        <button
-          style={{
-            border: '1px dashed #f7a76c55', borderRadius: 10, padding: 12, color: '#f7a76c',
-            fontSize: 13, cursor: 'pointer', width: '100%', marginBottom: 8, background: '#f7a76c10',
-          }}
-          onClick={() => setImportModalOpen(true)}
-        >
-          📋 Import from template (Joe / Sydney weights)
-        </button>
+        <>
+          {routines.length > 0 && (
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.5px', color: '#555', marginBottom: 8 }}>Load a template</div>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {routines.map(r => (
+                  <button
+                    key={r.id}
+                    style={{ background: '#1a1a2e', border: '1px solid #252540', borderRadius: 10, padding: '10px 14px', color: '#a090ff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+                    onClick={() => loadTemplate(r)}
+                  >
+                    {r.name.replace(/\s*—.*/, '')}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          <button
+            style={{
+              border: '1px dashed #f7a76c55', borderRadius: 10, padding: 12, color: '#f7a76c',
+              fontSize: 13, cursor: 'pointer', width: '100%', marginBottom: 8, background: '#f7a76c10',
+            }}
+            onClick={() => setImportModalOpen(true)}
+          >
+            📋 Import from template (Joe / Sydney weights)
+          </button>
+        </>
       )}
 
       {showPicker ? (

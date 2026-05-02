@@ -65,10 +65,14 @@ export default function WorkoutLogger() {
   const [weightModalDone, setWeightModalDone] = useState(false)
   const [weightInput, setWeightInput] = useState('')
   const [routines, setRoutines] = useState([])
+  const [prs, setPrs] = useState({})
+  const [partnerPrs, setPartnerPrs] = useState({})
 
   useEffect(() => {
     api.get('/exercises').then(setAllExercises)
     api.get('/routines').then(setRoutines).catch(() => {})
+    api.get('/exercises/prs').then(setPrs).catch(() => {})
+    if (forPartner) api.get('/partner/exercises/prs').then(setPartnerPrs).catch(() => {})
     // Create workout immediately so we have an ID
     api.post('/workouts', { date: new Date().toISOString().split('T')[0], is_shared: false })
       .then(w => setWorkoutId(w.id))
@@ -217,11 +221,14 @@ export default function WorkoutLogger() {
   }
 
   function loadTemplate(routine) {
+    const activePrs = forPartner ? partnerPrs : prs
     setLoggedExercises(routine.exercises.map(ex => ({
       exerciseId: ex.id,
       exerciseName: ex.name,
       sets: Array.from({ length: ex.default_sets ?? 3 }, () => ({
-        weight: ex.default_weight_lbs ? String(ex.default_weight_lbs) : '',
+        weight: activePrs[ex.id] != null
+          ? String(activePrs[ex.id])
+          : (ex.default_weight_lbs ? String(ex.default_weight_lbs) : ''),
         reps: String(ex.default_reps ?? 10),
         confirmed: false,
       })),

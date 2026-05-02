@@ -53,6 +53,25 @@ router.put('/:id', async (req, res) => {
   }
 })
 
+// GET /api/exercises/prs — own personal records as map: { [exercise_id]: maxWeight }
+router.get('/prs', async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT s.exercise_id, MAX(s.weight_lbs) AS pr
+       FROM sets s JOIN workouts w ON w.id = s.workout_id
+       WHERE w.user_id = $1 AND s.weight_lbs IS NOT NULL
+       GROUP BY s.exercise_id`,
+      [req.user.id]
+    )
+    const prs = {}
+    for (const row of rows) prs[row.exercise_id] = Number(row.pr)
+    res.json(prs)
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ error: 'Server error' })
+  }
+})
+
 // DELETE /api/exercises/:id — delete user's own custom exercise
 router.delete('/:id', async (req, res) => {
   try {

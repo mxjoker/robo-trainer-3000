@@ -137,6 +137,27 @@ router.post('/metrics', async (req, res) => {
   }
 })
 
+// GET /api/partner/exercises/prs — partner's PRs as map: { [exercise_id]: maxWeight }
+router.get('/exercises/prs', async (req, res) => {
+  try {
+    const partnerId = await getPartnerId(req.user.id)
+    if (!partnerId) return res.json({})
+    const { rows } = await pool.query(
+      `SELECT s.exercise_id, MAX(s.weight_lbs) AS pr
+       FROM sets s JOIN workouts w ON w.id = s.workout_id
+       WHERE w.user_id = $1 AND s.weight_lbs IS NOT NULL
+       GROUP BY s.exercise_id`,
+      [partnerId]
+    )
+    const prs = {}
+    for (const row of rows) prs[row.exercise_id] = Number(row.pr)
+    res.json(prs)
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ error: 'Server error' })
+  }
+})
+
 // GET /api/partner/stats/prs — partner's personal records (max weight per exercise)
 router.get('/stats/prs', async (req, res) => {
   try {
