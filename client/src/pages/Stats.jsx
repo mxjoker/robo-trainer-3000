@@ -201,40 +201,50 @@ export default function Stats() {
 
           <div style={s.card}>
             <div style={s.sectionLabel}>Pain & Energy</div>
-            <ResponsiveContainer width="100%" height={160}>
-              <LineChart data={activeHealthData}>
-                <XAxis dataKey="date" tick={{ fontSize: 9, fill: '#555' }} tickFormatter={d => d?.slice(5)} />
-                <YAxis domain={[0, 10]} tick={{ fontSize: 9, fill: '#555' }} />
-                <CartesianGrid stroke="#252540" />
-                <Tooltip {...tooltipStyle()} />
-                <Line type="monotone" dataKey="pain_level" stroke="#f7a76c" dot={false} strokeWidth={1.5} name="Pain" />
-                <Line type="monotone" dataKey="energy_level" stroke="#7c6af7" dot={false} strokeWidth={1.5} name="Energy" />
-              </LineChart>
-            </ResponsiveContainer>
-            <div style={s.legendRow}>
-              <div style={s.legendItem}><div style={s.legendLine('#f7a76c')} />Pain</div>
-              <div style={s.legendItem}><div style={s.legendLine('#7c6af7')} />Energy</div>
-            </div>
+            {activeHealthData.length === 0 ? (
+              <div style={{ color: '#555', fontSize: 13 }}>No wellness logs yet</div>
+            ) : (
+              <>
+                <ResponsiveContainer width="100%" height={160}>
+                  <LineChart data={activeHealthData}>
+                    <XAxis dataKey="date" tick={{ fontSize: 9, fill: '#555' }} tickFormatter={d => d?.slice(5)} />
+                    <YAxis domain={[0, 10]} tick={{ fontSize: 9, fill: '#555' }} />
+                    <CartesianGrid stroke="#252540" />
+                    <Tooltip {...tooltipStyle()} />
+                    <Line type="monotone" dataKey="pain_level" stroke="#f7a76c" dot={false} strokeWidth={1.5} name="Pain" />
+                    <Line type="monotone" dataKey="energy_level" stroke="#7c6af7" dot={false} strokeWidth={1.5} name="Energy" />
+                  </LineChart>
+                </ResponsiveContainer>
+                <div style={s.legendRow}>
+                  <div style={s.legendItem}><div style={s.legendLine('#f7a76c')} />Pain</div>
+                  <div style={s.legendItem}><div style={s.legendLine('#7c6af7')} />Energy</div>
+                </div>
+              </>
+            )}
           </div>
         </>
       )}
 
-      {activeTab === 'consistency' && activeConsistency && (
+      {activeTab === 'consistency' && (
         <div style={s.card}>
-          <div style={s.statRow}>
-            <div style={s.statItem}>
-              <div style={s.statNum}>{activeConsistency.current_streak}</div>
-              <div style={s.statSub}>Current streak</div>
+          {!activeConsistency ? (
+            <div style={{ color: '#555', fontSize: 13 }}>No workout data yet</div>
+          ) : (
+            <div style={s.statRow}>
+              <div style={s.statItem}>
+                <div style={s.statNum}>{activeConsistency.current_streak}</div>
+                <div style={s.statSub}>Current streak</div>
+              </div>
+              <div style={s.statItem}>
+                <div style={s.statNum}>{activeConsistency.longest_streak}</div>
+                <div style={s.statSub}>Longest streak</div>
+              </div>
+              <div style={s.statItem}>
+                <div style={s.statNum}>{activeConsistency.total_workouts}</div>
+                <div style={s.statSub}>Total workouts</div>
+              </div>
             </div>
-            <div style={s.statItem}>
-              <div style={s.statNum}>{activeConsistency.longest_streak}</div>
-              <div style={s.statSub}>Longest streak</div>
-            </div>
-            <div style={s.statItem}>
-              <div style={s.statNum}>{activeConsistency.total_workouts}</div>
-              <div style={s.statSub}>Total workouts</div>
-            </div>
-          </div>
+          )}
         </div>
       )}
     </div>
