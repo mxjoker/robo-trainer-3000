@@ -70,7 +70,7 @@ export default function Stats() {
   const [partnerHealthData, setPartnerHealthData] = useState([])
   const [partnerConsistency, setPartnerConsistency] = useState(null)
 
-  // On mount: fetch my data + partner profile + partner PRs/consistency
+  // On mount: fetch my data + partner data (all independent so one failure doesn't block others)
   useEffect(() => {
     api.get('/exercises').then(exs => {
       setExercises(exs)
@@ -79,17 +79,12 @@ export default function Stats() {
     api.get('/stats/prs').then(setPrs).catch(() => {})
     api.get('/stats/consistency').then(setConsistency).catch(() => {})
 
-    api.get('/partner/profile').then(p => {
-      setPartnerName(p.name)
-      return Promise.all([
-        api.get('/partner/stats/prs'),
-        api.get('/partner/stats/consistency'),
-      ])
-    }).then(([pPrs, pCon]) => {
+    api.get('/partner/profile').then(p => setPartnerName(p.name)).catch(() => {})
+    api.get('/partner/stats/prs').then(pPrs => {
       setPartnerPrs(pPrs)
-      setPartnerConsistency(pCon)
       if (pPrs.length) setPartnerSelectedExId(String(pPrs[0].exercise_id))
     }).catch(() => {})
+    api.get('/partner/stats/consistency').then(setPartnerConsistency).catch(() => {})
   }, [])
 
   // My strength chart
