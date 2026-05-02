@@ -141,21 +141,24 @@ export default function SharedWorkoutLogger() {
   }
 
   function loadTemplate(routine) {
-    setLoggedExercises(routine.exercises.map(ex => ({
-      exerciseId: ex.id,
-      exerciseName: ex.name,
-      sets: Array.from({ length: ex.default_sets ?? 3 }, () => ({
-        joe: {
-          weight: joePrs[ex.id] != null ? String(joePrs[ex.id]) : (ex.default_weight_lbs ? String(ex.default_weight_lbs) : ''),
-          reps: String(ex.default_reps ?? 10),
-        },
-        partner: {
-          weight: partnerPrs[ex.id] != null ? String(partnerPrs[ex.id]) : '',
-          reps: String(ex.default_reps ?? 10),
-        },
-        confirmed: false,
-      })),
-    })))
+    setLoggedExercises(routine.exercises.map(ex => {
+      const defaultW = Number(ex.default_weight_lbs)
+      return {
+        exerciseId: ex.id,
+        exerciseName: ex.name,
+        sets: Array.from({ length: ex.default_sets ?? 3 }, () => ({
+          joe: {
+            weight: joePrs[ex.id] != null ? String(joePrs[ex.id]) : (defaultW > 0 ? String(defaultW) : ''),
+            reps: String(ex.default_reps ?? 10),
+          },
+          partner: {
+            weight: partnerPrs[ex.id] != null ? String(partnerPrs[ex.id]) : '',
+            reps: String(ex.default_reps ?? 10),
+          },
+          confirmed: false,
+        })),
+      }
+    }))
   }
 
   async function submitWeights() {

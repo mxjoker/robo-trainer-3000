@@ -222,17 +222,20 @@ export default function WorkoutLogger() {
 
   function loadTemplate(routine) {
     const activePrs = forPartner ? partnerPrs : prs
-    setLoggedExercises(routine.exercises.map(ex => ({
-      exerciseId: ex.id,
-      exerciseName: ex.name,
-      sets: Array.from({ length: ex.default_sets ?? 3 }, () => ({
-        weight: activePrs[ex.id] != null
-          ? String(activePrs[ex.id])
-          : (ex.default_weight_lbs ? String(ex.default_weight_lbs) : ''),
-        reps: String(ex.default_reps ?? 10),
-        confirmed: false,
-      })),
-    })))
+    setLoggedExercises(routine.exercises.map(ex => {
+      const defaultW = Number(ex.default_weight_lbs)
+      return {
+        exerciseId: ex.id,
+        exerciseName: ex.name,
+        sets: Array.from({ length: ex.default_sets ?? 3 }, () => ({
+          weight: activePrs[ex.id] != null
+            ? String(activePrs[ex.id])
+            : (defaultW > 0 ? String(defaultW) : ''),
+          reps: String(ex.default_reps ?? 10),
+          confirmed: false,
+        })),
+      }
+    }))
   }
 
   async function submitWeight() {
