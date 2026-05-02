@@ -119,62 +119,67 @@ router.post('/seed-defaults', async (req, res) => {
     {
       name: 'Day A — Push + Core',
       exercises: [
-        { name: 'Chest Press Machine', sets: 3, reps: 10, weight: 40 },
-        { name: 'Incline Dumbbell Press', sets: 3, reps: 10, weight: 15 },
-        { name: 'Cable Tricep Pushdown (Rope)', sets: 3, reps: 10, weight: 30 },
-        { name: 'Lateral Raise (Dumbbell)', sets: 3, reps: 12, weight: 5 },
-        { name: 'Ab Crunch Machine', sets: 3, reps: 12, weight: 50 },
-        { name: 'Pallof Press', sets: 3, reps: 10, weight: 20 },
+        { name: 'Chest Press Machine', sets: 3, reps: 10 },
+        { name: 'Incline Dumbbell Press', sets: 3, reps: 10 },
+        { name: 'Cable Tricep Pushdown (Rope)', sets: 3, reps: 10 },
+        { name: 'Lateral Raise (Dumbbell)', sets: 3, reps: 12 },
+        { name: 'Ab Crunch Machine', sets: 3, reps: 12 },
+        { name: 'Pallof Press', sets: 3, reps: 10 },
       ],
     },
     {
       name: 'Day B — Pull + Hinge',
       exercises: [
-        { name: 'Lat Pulldown', sets: 3, reps: 10, weight: 50 },
-        { name: 'Seated Row Machine', sets: 3, reps: 10, weight: 40 },
-        { name: 'Romanian Deadlift (Dumbbell)', sets: 3, reps: 10, weight: 20 },
-        { name: 'Seated Leg Curl Machine', sets: 3, reps: 12, weight: 30 },
-        { name: 'Rear Delt Machine', sets: 3, reps: 12, weight: 10 },
-        { name: 'Bicep Curl Machine', sets: 3, reps: 10, weight: 25 },
-        { name: 'Pallof Press', sets: 3, reps: 10, weight: 20 },
+        { name: 'Lat Pulldown', sets: 3, reps: 10 },
+        { name: 'Seated Row Machine', sets: 3, reps: 10 },
+        { name: 'Romanian Deadlift (Dumbbell)', sets: 3, reps: 10 },
+        { name: 'Back Extension (Roman Chair)', sets: 3, reps: 10 },
+        { name: 'Seated Leg Curl Machine', sets: 3, reps: 12 },
+        { name: 'Rear Delt Machine', sets: 3, reps: 12 },
+        { name: 'Bicep Curl Machine', sets: 3, reps: 10 },
+        { name: 'Pallof Press', sets: 3, reps: 10 },
       ],
     },
     {
       name: 'Day C — Lower Focus',
       exercises: [
-        { name: 'Leg Press', sets: 3, reps: 10, weight: 70 },
-        { name: 'Glute Drive Machine', sets: 3, reps: 10, weight: 70 },
-        { name: 'Seated Hip Abduction Machine', sets: 3, reps: 12, weight: 60 },
-        { name: 'Cable Kickback', sets: 3, reps: 12, weight: 15 },
-        { name: 'Bicep Curl Machine', sets: 3, reps: 10, weight: 25 },
-        { name: 'Cable Tricep Pushdown (Rope)', sets: 3, reps: 10, weight: 30 },
-        { name: 'Ab Crunch Machine', sets: 3, reps: 12, weight: 50 },
+        { name: 'Leg Press', sets: 3, reps: 10 },
+        { name: 'Glute Drive Machine', sets: 3, reps: 10 },
+        { name: 'Seated Hip Abduction Machine', sets: 3, reps: 12 },
+        { name: 'Cable Kickback', sets: 3, reps: 12 },
+        { name: 'Bicep Curl Machine', sets: 3, reps: 10 },
+        { name: 'Cable Tricep Pushdown (Rope)', sets: 3, reps: 10 },
+        { name: 'Ab Crunch Machine', sets: 3, reps: 12 },
       ],
     },
     {
       name: 'Day D — Stability + Accessories',
       exercises: [
-        { name: 'Pallof Press', sets: 3, reps: 10, weight: 20 },
-        { name: 'Dumbbell Serratus Punch', sets: 3, reps: 12, weight: 10 },
-        { name: 'Face Pull', sets: 3, reps: 12, weight: 20 },
-        { name: 'Side Plank', sets: 3, reps: 20, weight: 0 },
-        { name: 'Side-Lying Hip Abduction', sets: 3, reps: 12, weight: 0 },
-        { name: 'Cable External Rotation', sets: 3, reps: 10, weight: 10 },
-        { name: 'Cable Press (Short Range)', sets: 3, reps: 10, weight: 20 },
+        { name: 'Pallof Press', sets: 3, reps: 10 },
+        { name: 'Dumbbell Serratus Punch', sets: 3, reps: 12 },
+        { name: 'Face Pull', sets: 3, reps: 12 },
+        { name: 'Side Plank', sets: 3, reps: 20 },
+        { name: 'Side-Lying Hip Abduction', sets: 3, reps: 12 },
+        { name: 'Back Extension (Roman Chair)', sets: 2, reps: 12 },
+        { name: 'Cable External Rotation', sets: 3, reps: 10 },
+        { name: 'Cable Press (Short Range)', sets: 3, reps: 10 },
       ],
     },
   ]
 
   try {
-    const existing = await pool.query(
+    await client.query('BEGIN')
+
+    // Delete existing Day routines so this always resets to current defaults
+    const existing = await client.query(
       "SELECT id FROM routines WHERE user_id = $1 AND name LIKE 'Day %'",
       [userId]
     )
-    if (existing.rows.length >= 4) {
-      return res.json({ message: 'Already seeded', routines: existing.rows })
+    for (const r of existing.rows) {
+      await client.query('DELETE FROM routine_exercises WHERE routine_id = $1', [r.id])
+      await client.query('DELETE FROM routines WHERE id = $1', [r.id])
     }
 
-    await client.query('BEGIN')
     const created = []
 
     for (const day of DEFAULT_DAYS) {

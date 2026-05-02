@@ -15,6 +15,7 @@ INSERT INTO exercises (name, muscle_group, exercise_type, is_pt_exercise) VALUES
   ('Pec Fly Machine', 'chest', 'machine', false),
   ('Ab Crunch Machine', 'core', 'machine', false),
   ('Back Extension Machine', 'back', 'machine', false),
+  ('Back Extension (Roman Chair)', 'back', 'machine', false),
   ('Leg Press', 'legs', 'machine', false),
   ('Seated Leg Curl Machine', 'legs', 'machine', false),
   ('Prone Leg Curl Machine', 'legs', 'machine', false),
