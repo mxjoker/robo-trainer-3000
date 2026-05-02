@@ -158,6 +158,83 @@ router.get('/exercises/prs', async (req, res) => {
   }
 })
 
+// GET /api/partner/stats/strength/:exerciseId — partner's max weight over time for one exercise
+router.get('/stats/strength/:exerciseId', async (req, res) => {
+  try {
+    const partnerId = await getPartnerId(req.user.id)
+    if (!partnerId) return res.status(404).json({ error: 'No partner linked' })
+    const result = await pool.query(
+      `SELECT w.date, MAX(s.weight_lbs) as max_weight_lbs, SUM(s.reps) as total_reps
+       FROM sets s JOIN workouts w ON w.id = s.workout_id
+       WHERE w.user_id = $1 AND s.exercise_id = $2 AND s.weight_lbs IS NOT NULL
+       GROUP BY w.date ORDER BY w.date ASC`,
+      [partnerId, req.params.exerciseId]
+    )
+    res.json(result.rows)
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ error: 'Server error' })
+  }
+})
+
+// GET /api/partner/stats/health — partner's pain + energy over time
+router.get('/stats/health', async (req, res) => {
+  try {
+    const partnerId = await getPartnerId(req.user.id)
+    if (!partnerId) return res.status(404).json({ error: 'No partner linked' })
+    const { start, end } = req.query
+    let query = `SELECT date, pain_level, energy_level, mood, sleep_hours
+                 FROM wellness_logs WHERE user_id = $1`
+    const params = [partnerId]
+    if (start) { params.push(start); query += ` AND date >= $${params.length}` }
+    if (end)   { params.push(end);   query += ` AND date <= $${params.length}` }
+    query += ' ORDER BY date ASC'
+    const result = await pool.query(query, params)
+    res.json(result.rows)
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ error: 'Server error' })
+  }
+})
+
+// GET /api/partner/stats/consistency — partner's streak + total workouts
+router.get('/stats/consistency', async (req, res) => {
+  try {
+    const partnerId = await getPartnerId(req.user.id)
+    if (!partnerId) return res.status(404).json({ error: 'No partner linked' })
+    const result = await pool.query(
+      `SELECT DISTINCT date FROM workouts WHERE user_id = $1 ORDER BY date ASC`,
+      [partnerId]
+    )
+    const dates = result.rows.map(r => r.date.toISOString().split('T')[0])
+    const total_workouts = dates.length
+    const dateSet = new Set(dates)
+
+    let current_streak = 0
+    let check = new Date()
+    const todayStr = check.toISOString().split('T')[0]
+    if (!dateSet.has(todayStr)) check.setDate(check.getDate() - 1)
+    while (true) {
+      const d = check.toISOString().split('T')[0]
+      if (dateSet.has(d)) { current_streak++; check.setDate(check.getDate() - 1) }
+      else break
+    }
+
+    let longest_streak = dates.length > 0 ? 1 : 0
+    let temp = dates.length > 0 ? 1 : 0
+    for (let i = 1; i < dates.length; i++) {
+      const diff = (new Date(dates[i]) - new Date(dates[i - 1])) / (1000 * 60 * 60 * 24)
+      temp = diff === 1 ? temp + 1 : 1
+      if (temp > longest_streak) longest_streak = temp
+    }
+
+    res.json({ workout_dates: dates, current_streak, longest_streak, total_workouts })
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ error: 'Server error' })
+  }
+})
+
 // GET /api/partner/stats/prs — partner's personal records (max weight per exercise)
 router.get('/stats/prs', async (req, res) => {
   try {

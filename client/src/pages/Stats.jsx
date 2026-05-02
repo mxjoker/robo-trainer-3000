@@ -1,9 +1,15 @@
 import { useEffect, useState } from 'react'
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
 import { api } from '../api/client'
 
 const s = {
   page: { padding: '16px 8px 100px' },
+  personRow: { display: 'flex', gap: 8, marginBottom: 16 },
+  personBtn: (active) => ({
+    flex: 1, padding: '10px 0', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 700,
+    background: active ? '#7c6af7' : '#1a1a2e',
+    color: active ? '#fff' : '#666'
+  }),
   tabs: { display: 'flex', background: '#1a1a2e', borderRadius: 10, padding: 3, marginBottom: 20 },
   tab: (active) => ({
     flex: 1, padding: '8px 0', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600,
@@ -42,32 +48,57 @@ function tooltipStyle() {
 }
 
 export default function Stats() {
+  const [person, setPerson] = useState('me')
+  const [partnerName, setPartnerName] = useState(null)
+
   const [activeTab, setActiveTab] = useState('strength')
+
+  // My data
   const [exercises, setExercises] = useState([])
   const [selectedExId, setSelectedExId] = useState('')
   const [strengthData, setStrengthData] = useState([])
   const [prs, setPrs] = useState([])
-  const [partnerPrs, setPartnerPrs] = useState([])
-  const [showPartnerPrs, setShowPartnerPrs] = useState(false)
   const [healthFilter, setHealthFilter] = useState('30d')
   const [healthData, setHealthData] = useState([])
   const [consistency, setConsistency] = useState(null)
 
+  // Partner data
+  const [partnerPrs, setPartnerPrs] = useState([])
+  const [partnerSelectedExId, setPartnerSelectedExId] = useState('')
+  const [partnerStrengthData, setPartnerStrengthData] = useState([])
+  const [partnerHealthFilter, setPartnerHealthFilter] = useState('30d')
+  const [partnerHealthData, setPartnerHealthData] = useState([])
+  const [partnerConsistency, setPartnerConsistency] = useState(null)
+
+  // On mount: fetch my data + partner profile + partner PRs/consistency
   useEffect(() => {
     api.get('/exercises').then(exs => {
       setExercises(exs)
       if (exs.length) setSelectedExId(String(exs[0].id))
     }).catch(() => {})
     api.get('/stats/prs').then(setPrs).catch(() => {})
-    api.get('/partner/stats/prs').then(setPartnerPrs).catch(() => {})
     api.get('/stats/consistency').then(setConsistency).catch(() => {})
+
+    api.get('/partner/profile').then(p => {
+      setPartnerName(p.name)
+      return Promise.all([
+        api.get('/partner/stats/prs'),
+        api.get('/partner/stats/consistency'),
+      ])
+    }).then(([pPrs, pCon]) => {
+      setPartnerPrs(pPrs)
+      setPartnerConsistency(pCon)
+      if (pPrs.length) setPartnerSelectedExId(String(pPrs[0].exercise_id))
+    }).catch(() => {})
   }, [])
 
+  // My strength chart
   useEffect(() => {
     if (!selectedExId) return
     api.get(`/stats/strength/${selectedExId}`).then(setStrengthData).catch(() => {})
   }, [selectedExId])
 
+  // My health chart
   useEffect(() => {
     if (healthFilter === 'All') {
       api.get('/stats/health').then(setHealthData).catch(() => {})
@@ -78,9 +109,46 @@ export default function Stats() {
     }
   }, [healthFilter])
 
+  // Partner strength chart
+  useEffect(() => {
+    if (!partnerSelectedExId) return
+    api.get(`/partner/stats/strength/${partnerSelectedExId}`).then(setPartnerStrengthData).catch(() => {})
+  }, [partnerSelectedExId])
+
+  // Partner health chart
+  useEffect(() => {
+    if (partnerHealthFilter === 'All') {
+      api.get('/partner/stats/health').then(setPartnerHealthData).catch(() => {})
+    } else {
+      const days = partnerHealthFilter === '7d' ? 7 : partnerHealthFilter === '30d' ? 30 : 90
+      const start = new Date(); start.setDate(start.getDate() - days)
+      api.get(`/partner/stats/health?start=${start.toISOString().split('T')[0]}`).then(setPartnerHealthData).catch(() => {})
+    }
+  }, [partnerHealthFilter])
+
+  const isPartner = person === 'partner'
+  const activePrs = isPartner ? partnerPrs : prs
+  const activeConsistency = isPartner ? partnerConsistency : consistency
+  const activeExercises = isPartner
+    ? partnerPrs.map(pr => ({ id: pr.exercise_id, name: pr.exercise_name }))
+    : exercises
+  const activeSelectedExId = isPartner ? partnerSelectedExId : selectedExId
+  const setActiveSelectedExId = isPartner ? setPartnerSelectedExId : setSelectedExId
+  const activeStrengthData = isPartner ? partnerStrengthData : strengthData
+  const activeHealthFilter = isPartner ? partnerHealthFilter : healthFilter
+  const setActiveHealthFilter = isPartner ? setPartnerHealthFilter : setHealthFilter
+  const activeHealthData = isPartner ? partnerHealthData : healthData
+
   return (
     <div style={s.page}>
-      <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.5px', marginBottom: 20 }}>Stats</div>
+      <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.5px', marginBottom: 16 }}>Stats</div>
+
+      {partnerName && (
+        <div style={s.personRow}>
+          <button style={s.personBtn(person === 'me')} onClick={() => setPerson('me')}>Me</button>
+          <button style={s.personBtn(person === 'partner')} onClick={() => setPerson('partner')}>{partnerName}</button>
+        </div>
+      )}
 
       <div style={s.tabs}>
         {['strength', 'health', 'consistency'].map(tab => (
@@ -92,14 +160,18 @@ export default function Stats() {
 
       {activeTab === 'strength' && (
         <>
-          <select style={s.select} value={selectedExId} onChange={e => setSelectedExId(e.target.value)}>
-            {exercises.map(ex => <option key={ex.id} value={ex.id}>{ex.name}</option>)}
+          <select
+            style={s.select}
+            value={activeSelectedExId}
+            onChange={e => setActiveSelectedExId(e.target.value)}
+          >
+            {activeExercises.map(ex => <option key={ex.id} value={ex.id}>{ex.name}</option>)}
           </select>
 
           <div style={s.card}>
             <div style={s.sectionLabel}>Max Weight Over Time</div>
             <ResponsiveContainer width="100%" height={140}>
-              <LineChart data={strengthData}>
+              <LineChart data={activeStrengthData}>
                 <XAxis dataKey="date" tick={{ fontSize: 9, fill: '#555' }} tickFormatter={d => d?.slice(5)} />
                 <YAxis tick={{ fontSize: 9, fill: '#555' }} />
                 <CartesianGrid stroke="#252540" />
@@ -111,18 +183,10 @@ export default function Stats() {
 
           <div style={s.card}>
             <div style={s.sectionLabel}>Personal Records</div>
-            {(prs.length > 0 || partnerPrs.length > 0) && (
-              <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-                <button style={s.filterBtn(!showPartnerPrs)} onClick={() => setShowPartnerPrs(false)}>My PRs</button>
-                {partnerPrs.length > 0 && (
-                  <button style={s.filterBtn(showPartnerPrs)} onClick={() => setShowPartnerPrs(true)}>Partner PRs</button>
-                )}
-              </div>
-            )}
-            {(showPartnerPrs ? partnerPrs : prs).length === 0 && (
+            {activePrs.length === 0 && (
               <div style={{ color: '#555', fontSize: 13 }}>No lifts logged yet</div>
             )}
-            {(showPartnerPrs ? partnerPrs : prs).map(pr => (
+            {activePrs.map(pr => (
               <div key={pr.exercise_id} style={s.prRow}>
                 <div style={s.prName}>{pr.exercise_name}</div>
                 <div style={s.prWeight}>{Number(pr.max_weight_lbs)} lbs</div>
@@ -136,14 +200,14 @@ export default function Stats() {
         <>
           <div style={s.filterRow}>
             {FILTERS.map(f => (
-              <button key={f} style={s.filterBtn(healthFilter === f)} onClick={() => setHealthFilter(f)}>{f}</button>
+              <button key={f} style={s.filterBtn(activeHealthFilter === f)} onClick={() => setActiveHealthFilter(f)}>{f}</button>
             ))}
           </div>
 
           <div style={s.card}>
             <div style={s.sectionLabel}>Pain & Energy</div>
             <ResponsiveContainer width="100%" height={160}>
-              <LineChart data={healthData}>
+              <LineChart data={activeHealthData}>
                 <XAxis dataKey="date" tick={{ fontSize: 9, fill: '#555' }} tickFormatter={d => d?.slice(5)} />
                 <YAxis domain={[0, 10]} tick={{ fontSize: 9, fill: '#555' }} />
                 <CartesianGrid stroke="#252540" />
@@ -160,25 +224,23 @@ export default function Stats() {
         </>
       )}
 
-      {activeTab === 'consistency' && consistency && (
-        <>
-          <div style={s.card}>
-            <div style={s.statRow}>
-              <div style={s.statItem}>
-                <div style={s.statNum}>{consistency.current_streak}</div>
-                <div style={s.statSub}>Current streak</div>
-              </div>
-              <div style={s.statItem}>
-                <div style={s.statNum}>{consistency.longest_streak}</div>
-                <div style={s.statSub}>Longest streak</div>
-              </div>
-              <div style={s.statItem}>
-                <div style={s.statNum}>{consistency.total_workouts}</div>
-                <div style={s.statSub}>Total workouts</div>
-              </div>
+      {activeTab === 'consistency' && activeConsistency && (
+        <div style={s.card}>
+          <div style={s.statRow}>
+            <div style={s.statItem}>
+              <div style={s.statNum}>{activeConsistency.current_streak}</div>
+              <div style={s.statSub}>Current streak</div>
+            </div>
+            <div style={s.statItem}>
+              <div style={s.statNum}>{activeConsistency.longest_streak}</div>
+              <div style={s.statSub}>Longest streak</div>
+            </div>
+            <div style={s.statItem}>
+              <div style={s.statNum}>{activeConsistency.total_workouts}</div>
+              <div style={s.statSub}>Total workouts</div>
             </div>
           </div>
-        </>
+        </div>
       )}
     </div>
   )
