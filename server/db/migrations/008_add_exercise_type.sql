@@ -1,19 +1,8 @@
--- Migration 008: Add exercise_type column + replace global exercise seed with YMCA list
+-- Migration 008: Add exercise_type column + upsert full YMCA exercise list
 
 ALTER TABLE exercises ADD COLUMN IF NOT EXISTS exercise_type VARCHAR(20);
 
--- Detach sets that reference old global exercises (preserves set records, just loses exercise name link)
-UPDATE sets SET exercise_id = NULL
-WHERE exercise_id IN (SELECT id FROM exercises WHERE created_by IS NULL);
-
--- Clear routine_exercises references to global exercises before deleting them
-DELETE FROM routine_exercises
-WHERE exercise_id IN (SELECT id FROM exercises WHERE created_by IS NULL);
-
--- Remove old global exercises
-DELETE FROM exercises WHERE created_by IS NULL;
-
--- Insert full YMCA exercise list
+-- Insert full YMCA exercise list (upsert — safe to re-run)
 -- Machine exercises
 INSERT INTO exercises (name, muscle_group, exercise_type, is_pt_exercise) VALUES
   ('Chest Press Machine', 'chest', 'machine', false),
