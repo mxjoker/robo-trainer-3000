@@ -14,7 +14,7 @@ function thumbnailUrl(url) {
 }
 
 const s = {
-  page: { padding: '20px 4px 100px' },
+  page: { padding: '16px 0 100px' },
   title: { fontSize: 22, fontWeight: 700, letterSpacing: '-0.5px', marginBottom: 20 },
   monthLabel: { fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.5px', color: '#555', marginBottom: 10 },
   grid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 20 },
