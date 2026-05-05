@@ -368,7 +368,7 @@ export default function WorkoutLogger() {
               📋 Paste workout text
             </button>
           ) : (
-            <div style={{ background: '#1a1a2e', borderRadius: 10, padding: 14, marginBottom: 12 }}>
+            <div data-testid="import-modal" style={{ background: '#1a1a2e', borderRadius: 10, padding: 14, marginBottom: 12 }}>
               <div style={{ fontSize: 13, fontWeight: 600, color: '#4db6f7', marginBottom: 8 }}>Paste workout text</div>
               <div style={{ fontSize: 12, color: '#888', marginBottom: 8 }}>Format: "Exercise Name: 3x8 @ 185"</div>
               <textarea

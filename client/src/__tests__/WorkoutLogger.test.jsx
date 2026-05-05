@@ -59,7 +59,7 @@ describe('WorkoutLogger — mobility section', () => {
     fireEvent.change(screen.getByRole('spinbutton', { name: 'Duration in seconds' }), { target: { value: '30' } })
     fireEvent.click(screen.getByTestId('add-mobility-btn'))
 
-    await waitFor(() => expect(screen.getByText('Clamshell')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getAllByText('Clamshell').length).toBeGreaterThan(0))
     expect(screen.getByText(/30s/)).toBeInTheDocument()
     expect(api.post).toHaveBeenCalledWith('/workouts/5/mobility', {
       exercise_id: 1,
@@ -81,7 +81,7 @@ describe('WorkoutLogger — mobility section', () => {
     fireEvent.change(screen.getByRole('combobox', { name: 'Mobility exercise' }), { target: { value: '1' } })
     fireEvent.change(screen.getByRole('spinbutton', { name: 'Duration in seconds' }), { target: { value: '30' } })
     fireEvent.click(screen.getByTestId('add-mobility-btn'))
-    await waitFor(() => expect(screen.getByText('Clamshell')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getAllByText('Clamshell').length).toBeGreaterThan(0))
 
     fireEvent.click(screen.getByRole('button', { name: 'Remove Clamshell' }))
     // Check the remove button is gone (the name "Clamshell" still appears in the picker <select>)
@@ -108,7 +108,7 @@ describe('WorkoutLogger — import banner & modal', () => {
     render(<WorkoutLogger />)
     await waitFor(() => expect(screen.getByTestId('import-banner-btn')).toBeInTheDocument())
     fireEvent.click(screen.getByTestId('import-banner-btn'))
-    expect(screen.getByTestId('import-modal')).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByTestId('import-modal')).toBeInTheDocument())
     expect(screen.getByRole('textbox', { name: 'Paste Claude template' })).toBeInTheDocument()
   })
 

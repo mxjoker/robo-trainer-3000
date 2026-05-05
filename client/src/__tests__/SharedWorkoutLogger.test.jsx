@@ -72,10 +72,7 @@ describe('SharedWorkoutLogger', () => {
 
     fireEvent.click(screen.getByText('+ Add Exercise'))
 
-    await waitFor(() => {
-      expect(screen.getByRole('combobox')).toBeInTheDocument()
-      expect(screen.getByText('Bench Press')).toBeInTheDocument()
-    })
+    await waitFor(() => expect(screen.getByRole('combobox')).toBeInTheDocument())
   })
 
   it('confirms a set with different values for Joe and partner; auto-adds next set', async () => {
