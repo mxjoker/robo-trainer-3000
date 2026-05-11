@@ -27,7 +27,9 @@ async function resizeImage(file, maxPx = 1200) {
 
 export async function uploadToCloudinary(file) {
   if (!CLOUD_NAME || !UPLOAD_PRESET) {
-    throw new Error('Cloudinary env vars not set (VITE_CLOUDINARY_CLOUD_NAME / VITE_CLOUDINARY_UPLOAD_PRESET)')
+    throw new Error(
+      'Photo upload is not configured. Add VITE_CLOUDINARY_CLOUD_NAME and VITE_CLOUDINARY_UPLOAD_PRESET to client/.env — see client/.env.example'
+    )
   }
   const blob = await resizeImage(file)
   const form = new FormData()
