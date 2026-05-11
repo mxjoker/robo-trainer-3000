@@ -40,7 +40,7 @@ function makeSet(prev = null) {
 export default function WorkoutLogger() {
   const navigate = useNavigate()
   const { state } = useLocation()
-  const { forPartner } = state || {}
+  const { forPartner, resumeWorkoutId } = state || {}
 
   const [allExercises, setAllExercises] = useState([])
   const [workoutId, setWorkoutId] = useState(null)
@@ -51,6 +51,7 @@ export default function WorkoutLogger() {
   const [newMuscle, setNewMuscle] = useState('')
   const [newIsPT, setNewIsPT] = useState(false)
   const [addingNew, setAddingNew] = useState(false)
+  const [showCancelModal, setShowCancelModal] = useState(false)
 
   // Each entry: { exerciseId, exerciseName, sets: [{ weight, reps, confirmed }] }
   const [loggedExercises, setLoggedExercises] = useState([])
@@ -73,10 +74,37 @@ export default function WorkoutLogger() {
     api.get('/routines').then(setRoutines).catch(() => {})
     api.get('/exercises/prs').then(setPrs).catch(() => {})
     if (forPartner) api.get('/partner/exercises/prs').then(setPartnerPrs).catch(() => {})
-    // Create workout immediately so we have an ID
-    api.post('/workouts', { date: new Date().toISOString().split('T')[0], is_shared: false })
-      .then(w => setWorkoutId(w.id))
+
+    if (resumeWorkoutId) {
+      setWorkoutId(resumeWorkoutId)
+      api.get(`/workouts/${resumeWorkoutId}`).then(workout => {
+        const grouped = {}
+        for (const s of workout.sets) {
+          if (!grouped[s.exercise_id]) {
+            grouped[s.exercise_id] = { exerciseId: s.exercise_id, exerciseName: s.exercise_name, sets: [] }
+          }
+          grouped[s.exercise_id].sets.push({
+            weight: String(s.weight_lbs ?? ''),
+            reps: String(s.reps ?? '10'),
+            confirmed: true,
+          })
+        }
+        setLoggedExercises(Object.values(grouped))
+      }).catch(() => {})
+      localStorage.removeItem('rt_active_workout_id')
+    } else {
+      api.post('/workouts', { date: new Date().toISOString().split('T')[0], is_shared: false })
+        .then(w => setWorkoutId(w.id))
+    }
   }, [])
+
+  async function handleDiscard() {
+    if (workoutId) {
+      try { await api.delete(`/workouts/${workoutId}`) } catch { /* non-critical */ }
+    }
+    localStorage.removeItem('rt_active_workout_id')
+    navigate('/')
+  }
 
   function addExercise(exerciseId) {
     const ex = allExercises.find(e => e.id === Number(exerciseId))
@@ -266,6 +294,7 @@ export default function WorkoutLogger() {
           })
         }
       }
+      localStorage.removeItem('rt_active_workout_id')
       navigate('/')
     } catch (err) {
       alert('Error saving workout: ' + err.message)
@@ -298,8 +327,29 @@ export default function WorkoutLogger() {
           </div>
         </div>
       )}
+      {showCancelModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.88)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, zIndex: 210 }}>
+          <div style={{ background: '#1a1a2e', borderRadius: 14, padding: 24, width: '100%', maxWidth: 320, display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ fontSize: 16, fontWeight: 700 }}>Discard workout?</div>
+            <button
+              aria-label="discard"
+              style={{ background: '#e05555', border: 'none', borderRadius: 10, padding: 12, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
+              onClick={handleDiscard}
+            >Discard</button>
+            <button
+              aria-label="save for later"
+              style={{ background: '#252540', border: '1px solid #333', borderRadius: 10, padding: 12, color: '#ccc', fontSize: 14, cursor: 'pointer' }}
+              onClick={() => { localStorage.setItem('rt_active_workout_id', String(workoutId)); navigate('/') }}
+            >Save for later</button>
+            <button
+              style={{ background: 'none', border: 'none', color: '#7c6af7', fontSize: 13, cursor: 'pointer' }}
+              onClick={() => setShowCancelModal(false)}
+            >Keep logging</button>
+          </div>
+        </div>
+      )}
       <div style={s.header}>
-        <button style={s.backBtn} onClick={() => navigate('/')}>Cancel</button>
+        <button style={s.backBtn} onClick={() => setShowCancelModal(true)}>Cancel</button>
         <div style={s.title}>Log Workout</div>
         <div style={{ width: 60 }} />
       </div>
