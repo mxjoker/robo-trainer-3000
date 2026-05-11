@@ -116,6 +116,28 @@ router.post('/workouts/:id/sets', async (req, res) => {
   }
 })
 
+// PUT /api/partner/workouts/:id/photo — set photo_url on a partner's workout
+router.put('/workouts/:id/photo', async (req, res) => {
+  try {
+    const partnerId = await getPartnerId(req.user.id)
+    if (!partnerId) return res.status(404).json({ error: 'No partner linked' })
+    const { photo_url } = req.body
+    const check = await pool.query(
+      'SELECT id FROM workouts WHERE id = $1 AND user_id = $2',
+      [req.params.id, partnerId]
+    )
+    if (!check.rows[0]) return res.status(404).json({ error: 'Workout not found' })
+    const result = await pool.query(
+      'UPDATE workouts SET photo_url = $1 WHERE id = $2 RETURNING *',
+      [photo_url ?? null, req.params.id]
+    )
+    res.json(result.rows[0])
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ error: 'Server error' })
+  }
+})
+
 // POST /api/partner/metrics — log body weight on behalf of partner
 router.post('/metrics', async (req, res) => {
   try {

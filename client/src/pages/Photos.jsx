@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../api/client'
+import { uploadToCloudinary } from '../services/cloudinaryService'
 
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December']
 
@@ -36,6 +37,33 @@ export default function Photos() {
   const { currentUser } = useAuth()
   const [groups, setGroups] = useState(null)
   const [selected, setSelected] = useState(null)
+  const [photoLoading, setPhotoLoading] = useState(false)
+  const [photoError, setPhotoError] = useState(null)
+  const fileInputRef = useRef(null)
+
+  async function handlePartnerPhotoUpload(e) {
+    const file = e.target.files?.[0]
+    if (!file || !selected) return
+    setPhotoLoading(true)
+    setPhotoError(null)
+    try {
+      const url = await uploadToCloudinary(file)
+      await api.put(`/partner/workouts/${selected.id}/photo`, { photo_url: url })
+      setSelected(prev => ({ ...prev, photo_url: url }))
+      setGroups(prev => {
+        const next = { ...prev }
+        for (const key of Object.keys(next)) {
+          next[key] = next[key].map(w => w.id === selected.id ? { ...w, photo_url: url } : w)
+        }
+        return next
+      })
+    } catch {
+      setPhotoError('Upload failed. Please try again.')
+    } finally {
+      setPhotoLoading(false)
+      e.target.value = ''
+    }
+  }
 
   useEffect(() => {
     async function load() {
@@ -99,6 +127,27 @@ export default function Photos() {
               <div style={s.modalDate}>{selected.date.split('T')[0]}</div>
               <div style={s.modalNotes}>{selected.notes || 'No notes'}</div>
             </div>
+            {selected.isPartner && (
+              <div style={{ padding: '0 16px 16px' }}>
+                <input
+                  data-testid="partner-photo-input"
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  style={{ display: 'none' }}
+                  onChange={handlePartnerPhotoUpload}
+                />
+                <button
+                  aria-label="change photo"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={photoLoading}
+                  style={{ width: '100%', padding: 10, background: '#252540', border: 'none', borderRadius: 8, color: '#a090ff', fontSize: 13, cursor: 'pointer' }}
+                >
+                  {photoLoading ? 'Uploading...' : '📷 Change photo'}
+                </button>
+                {photoError && <div style={{ fontSize: 11, color: '#e05555', marginTop: 6 }}>{photoError}</div>}
+              </div>
+            )}
           </div>
         </div>
       )}
