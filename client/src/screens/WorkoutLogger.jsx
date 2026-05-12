@@ -9,7 +9,7 @@ const s = {
   page: { padding: '16px 4px 100px' },
   header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
   title: { fontSize: 18, fontWeight: 700, letterSpacing: '-0.5px' },
-  backBtn: { background: 'none', border: 'none', color: '#7c6af7', fontSize: 14, cursor: 'pointer', padding: '4px 0' },
+  backBtn: { background: 'none', border: 'none', color: 'var(--accent)', fontSize: 14, cursor: 'pointer', padding: '4px 0' },
   exerciseCard: { background: '#1a1a2e', borderRadius: 10, padding: 14, marginBottom: 12 },
   exerciseName: { fontSize: 14, fontWeight: 600, marginBottom: 10 },
   colHeaders: { display: 'grid', gridTemplateColumns: '32px 1fr 1fr 40px', gap: 6, marginBottom: 6 },
@@ -18,19 +18,19 @@ const s = {
   setNum: { fontSize: 11, color: '#555', textAlign: 'center' },
   input: { background: '#252540', border: '1px solid #333', borderRadius: 6, padding: '8px 4px', color: '#fff', fontSize: 13, fontWeight: 600, textAlign: 'center', width: '100%', outline: 'none' },
   confirmBtn: (done) => ({ background: done ? '#4caf8a' : '#252540', border: `1px solid ${done ? '#4caf8a' : '#333'}`, borderRadius: 6, color: done ? '#fff' : '#555', fontSize: 16, cursor: 'pointer', padding: '6px 0', textAlign: 'center' }),
-  addSetBtn: { background: 'none', border: '1px dashed #333', borderRadius: 6, padding: 8, color: '#7c6af7', fontSize: 12, cursor: 'pointer', width: '100%', marginTop: 4 },
-  addExBtn: { background: '#1a1a2e', border: '1px solid #252540', borderRadius: 10, padding: 12, color: '#7c6af7', fontSize: 13, cursor: 'pointer', width: '100%', marginBottom: 12, fontWeight: 600 },
-  finishBtn: { background: '#7c6af7', border: 'none', borderRadius: 10, padding: 14, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', width: '100%', marginTop: 8 },
+  addSetBtn: { background: 'none', border: '1px dashed #333', borderRadius: 6, padding: 8, color: 'var(--accent)', fontSize: 12, cursor: 'pointer', width: '100%', marginTop: 4 },
+  addExBtn: { background: '#1a1a2e', border: '1px solid #252540', borderRadius: 10, padding: 12, color: 'var(--accent)', fontSize: 13, cursor: 'pointer', width: '100%', marginBottom: 12, fontWeight: 600 },
+  finishBtn: { background: 'var(--accent)', border: 'none', borderRadius: 10, padding: 14, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', width: '100%', marginTop: 8 },
   pill: { background: '#f7a76c22', border: '1px solid #f7a76c55', borderRadius: 20, padding: '4px 12px', color: '#f7a76c', fontSize: 11, display: 'inline-block', marginBottom: 12 },
   exercisePicker: { background: '#111', border: '1px solid #333', borderRadius: 8, padding: 8, color: '#fff', fontSize: 14, width: '100%', marginBottom: 6, outline: 'none' },
-  cantFindLink: { background: 'none', border: 'none', color: '#7c6af7', fontSize: 12, cursor: 'pointer', padding: '4px 0', marginBottom: 12, display: 'block', textAlign: 'left' },
+  cantFindLink: { background: 'none', border: 'none', color: 'var(--accent)', fontSize: 12, cursor: 'pointer', padding: '4px 0', marginBottom: 12, display: 'block', textAlign: 'left' },
   newExForm: { background: '#1a1a2e', border: '1px solid #333', borderRadius: 10, padding: 14, marginBottom: 12 },
   newExInput: { background: '#252540', border: '1px solid #333', borderRadius: 6, padding: '9px 12px', color: '#fff', fontSize: 13, width: '100%', outline: 'none', marginBottom: 8 },
   newExSelect: { background: '#252540', border: '1px solid #333', borderRadius: 6, padding: '9px 12px', color: '#fff', fontSize: 13, width: '100%', outline: 'none', marginBottom: 8 },
   newExCheckRow: { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, fontSize: 13, color: '#ccc' },
   newExActions: { display: 'flex', gap: 8 },
-  addLogBtn: { flex: 1, background: '#7c6af7', border: 'none', borderRadius: 8, padding: '10px 0', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' },
-  cancelLink: { background: 'none', border: 'none', color: '#7c6af7', fontSize: 12, cursor: 'pointer', padding: '10px 8px' },
+  addLogBtn: { flex: 1, background: 'var(--accent)', border: 'none', borderRadius: 8, padding: '10px 0', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' },
+  cancelLink: { background: 'none', border: 'none', color: 'var(--accent)', fontSize: 12, cursor: 'pointer', padding: '10px 8px' },
 }
 
 function makeSet(prev = null) {
@@ -319,7 +319,7 @@ export default function WorkoutLogger() {
               autoFocus
             />
             <button
-              style={{ background: '#7c6af7', border: 'none', borderRadius: 10, padding: 13, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
+              style={{ background: 'var(--accent)', border: 'none', borderRadius: 10, padding: 13, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
               onClick={submitWeight}
             >
               {weightInput ? 'Log & Start Workout' : 'Skip'}
@@ -342,7 +342,7 @@ export default function WorkoutLogger() {
               onClick={() => { localStorage.setItem('rt_active_workout_id', String(workoutId)); navigate('/') }}
             >Save for later</button>
             <button
-              style={{ background: 'none', border: 'none', color: '#7c6af7', fontSize: 13, cursor: 'pointer' }}
+              style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: 13, cursor: 'pointer' }}
               onClick={() => setShowCancelModal(false)}
             >Keep logging</button>
           </div>
@@ -399,7 +399,7 @@ export default function WorkoutLogger() {
                 {routines.map(r => (
                   <button
                     key={r.id}
-                    style={{ background: '#1a1a2e', border: '1px solid #252540', borderRadius: 10, padding: '10px 14px', color: '#a090ff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+                    style={{ background: '#1a1a2e', border: '1px solid #252540', borderRadius: 10, padding: '10px 14px', color: 'var(--accent-dim)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
                     onClick={() => loadTemplate(r)}
                   >
                     {r.name.replace(/\s*—.*/, '')}
@@ -432,7 +432,7 @@ export default function WorkoutLogger() {
               <div style={{ display: 'flex', gap: 8 }}>
                 <button
                   data-testid="import-submit-btn"
-                  style={{ flex: 1, background: '#7c6af7', border: 'none', borderRadius: 10, padding: 11, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+                  style={{ flex: 1, background: 'var(--accent)', border: 'none', borderRadius: 10, padding: 11, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
                   onClick={handleImport}
                   disabled={importing || !importText.trim()}
                 >
@@ -440,7 +440,7 @@ export default function WorkoutLogger() {
                 </button>
                 <button
                   data-testid="import-cancel-btn"
-                  style={{ background: 'none', border: 'none', color: '#7c6af7', fontSize: 13, cursor: 'pointer', padding: '11px 8px' }}
+                  style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: 13, cursor: 'pointer', padding: '11px 8px' }}
                   onClick={() => { setPasteExpanded(false); setImportText('') }}
                 >
                   Cancel
@@ -553,7 +553,7 @@ export default function WorkoutLogger() {
             />
             <button
               data-testid="add-mobility-btn"
-              style={{ background: '#7c6af7', border: 'none', borderRadius: 8, padding: '8px 14px', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+              style={{ background: 'var(--accent)', border: 'none', borderRadius: 8, padding: '8px 14px', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
               onClick={addMobilitySet}
               disabled={!mobilityPickerExId || !mobilityDurationInput}
             >Add</button>

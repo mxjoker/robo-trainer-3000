@@ -18,7 +18,7 @@ const s = {
   tabs: { display: 'flex', alignItems: 'center', justifyContent: 'space-around', width: '100%' },
   tab: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: '4px 12px', textDecoration: 'none', color: '#555', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.5px' },
   icon: { fontSize: 18, lineHeight: 1 },
-  active: { color: 'var(--accent-dim, #a090ff)' },
+  active: { color: 'var(--accent-dim)' },
   netlify: { fontSize: 9, color: '#333', textDecoration: 'none', padding: '4px 0 10px', letterSpacing: '0.3px' }
 }
 

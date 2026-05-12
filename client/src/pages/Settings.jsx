@@ -11,13 +11,13 @@ const s = {
   card: { background: '#1a1a2e', borderRadius: 10, padding: 16, marginBottom: 10 },
   name: { fontSize: 16, fontWeight: 600 },
   email: { fontSize: 13, color: '#666', marginTop: 2 },
-  btn: (color = '#7c6af7') => ({ width: '100%', padding: 13, background: color, border: 'none', borderRadius: 10, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', marginBottom: 8 }),
-  inviteUrl: { background: '#252540', borderRadius: 8, padding: '10px 12px', fontSize: 12, color: '#a090ff', wordBreak: 'break-all', marginTop: 8 },
+  btn: (color = 'var(--accent)') => ({ width: '100%', padding: 13, background: color, border: 'none', borderRadius: 10, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', marginBottom: 8 }),
+  inviteUrl: { background: '#252540', borderRadius: 8, padding: '10px 12px', fontSize: 12, color: 'var(--accent-dim)', wordBreak: 'break-all', marginTop: 8 },
   row: { display: 'flex', gap: 8, marginBottom: 8 },
-  filterBtn: (active) => ({ padding: '6px 12px', borderRadius: 20, border: `1px solid ${active ? '#7c6af7' : '#333'}`, background: active ? '#7c6af722' : 'transparent', color: active ? '#a090ff' : '#666', fontSize: 11, cursor: 'pointer' }),
+  filterBtn: (active) => ({ padding: '6px 12px', borderRadius: 20, border: `1px solid ${active ? 'var(--accent)' : '#333'}`, background: active ? 'var(--accent-bg)' : 'transparent', color: active ? 'var(--accent-dim)' : '#666', fontSize: 11, cursor: 'pointer' }),
   toggle: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
   toggleLabel: { fontSize: 14, color: '#ccc' },
-  toggleInput: { width: 44, height: 24, accentColor: '#7c6af7', cursor: 'pointer' },
+  toggleInput: { width: 44, height: 24, accentColor: 'var(--accent)', cursor: 'pointer' },
   numInput: { background: '#252540', border: '1px solid #333', borderRadius: 6, color: '#fff', padding: '4px 8px', width: 60, fontSize: 13 },
   hint: { fontSize: 11, color: '#555', marginTop: -8, marginBottom: 10 },
 }
@@ -305,7 +305,7 @@ export default function Settings() {
                       .map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
                   </select>
                   <button
-                    style={{ background: '#7c6af7', border: 'none', borderRadius: 8, padding: '8px 14px', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+                    style={{ background: 'var(--accent)', border: 'none', borderRadius: 8, padding: '8px 14px', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
                     onClick={() => addExercise(routine.id)}
                     disabled={!addExMap[routine.id] || savingRoutine[routine.id]}
                   >Add</button>

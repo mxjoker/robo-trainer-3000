@@ -7,9 +7,9 @@ const s = {
   heading: { fontSize: 24, fontWeight: 700, letterSpacing: '-0.5px', marginBottom: 8 },
   label: { fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.5px', color: '#666', marginBottom: 4, display: 'block' },
   input: { width: '100%', background: '#1a1a2e', border: '1px solid #252540', borderRadius: 8, padding: '12px 14px', color: '#fff', fontSize: 15, outline: 'none' },
-  btn: { width: '100%', padding: 14, background: '#7c6af7', border: 'none', borderRadius: 10, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', marginTop: 8 },
+  btn: { width: '100%', padding: 14, background: 'var(--accent)', border: 'none', borderRadius: 10, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', marginTop: 8 },
   error: { color: '#f77c6a', fontSize: 13 },
-  link: { color: '#7c6af7', fontSize: 13, textAlign: 'center', display: 'block', marginTop: 8 }
+  link: { color: 'var(--accent)', fontSize: 13, textAlign: 'center', display: 'block', marginTop: 8 }
 }
 
 export default function Login() {

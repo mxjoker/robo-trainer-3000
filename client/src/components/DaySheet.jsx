@@ -85,7 +85,7 @@ export default function DaySheet({ date, data, onClose, onLogWorkout, onLogWelln
             >Log Workout</button>
             <button
               onClick={onLogWellness}
-              style={{ width: '100%', padding: 12, background: '#7c6af722', border: '1px solid #7c6af7', borderRadius: 10, color: '#a090ff', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
+              style={{ width: '100%', padding: 12, background: 'var(--accent-bg)', border: '1px solid var(--accent)', borderRadius: 10, color: 'var(--accent-dim)', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
             >Log Wellness</button>
           </div>
         ) : (
@@ -131,7 +131,7 @@ export default function DaySheet({ date, data, onClose, onLogWorkout, onLogWelln
                       <button
                         onClick={() => fileInputRef.current?.click()}
                         disabled={photoLoading}
-                        style={{ flex: 1, padding: 7, background: '#252540', border: 'none', borderRadius: 7, color: '#a090ff', fontSize: 11, cursor: 'pointer' }}
+                        style={{ flex: 1, padding: 7, background: '#252540', border: 'none', borderRadius: 7, color: 'var(--accent-dim)', fontSize: 11, cursor: 'pointer' }}
                       >Change</button>
                       <button
                         onClick={handleRemove}
@@ -157,12 +157,12 @@ export default function DaySheet({ date, data, onClose, onLogWorkout, onLogWelln
 
             {wellness && (
               <div style={{ background: '#1a1a2e', borderRadius: 10, padding: 14 }}>
-                <div style={{ color: '#a090ff', fontWeight: 600, fontSize: 13, marginBottom: 8 }}>🌿 Wellness</div>
+                <div style={{ color: 'var(--accent-dim)', fontWeight: 600, fontSize: 13, marginBottom: 8 }}>🌿 Wellness</div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 10 }}>
                   {[
-                    ['Energy', wellness.energy_level, '#7c6af7'],
+                    ['Energy', wellness.energy_level, 'var(--accent)'],
                     ['Mood', wellness.mood, '#4caf50'],
-                    ['Pain', wellness.pain_level, '#f7a76c'],
+                    ['Pain', wellness.pain_level, '#f472b6'],
                   ].map(([label, value, color]) => value != null && (
                     <div key={label} style={{ textAlign: 'center' }}>
                       <div style={{ fontSize: 18, fontWeight: 700, color }}>{value}</div>

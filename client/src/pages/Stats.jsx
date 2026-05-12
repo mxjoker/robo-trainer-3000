@@ -7,13 +7,13 @@ const s = {
   personRow: { display: 'flex', gap: 8, marginBottom: 16 },
   personBtn: (active) => ({
     flex: 1, padding: '10px 0', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 700,
-    background: active ? '#7c6af7' : '#1a1a2e',
+    background: active ? 'var(--accent)' : '#1a1a2e',
     color: active ? '#fff' : '#666'
   }),
   tabs: { display: 'flex', background: '#1a1a2e', borderRadius: 10, padding: 3, marginBottom: 20 },
   tab: (active) => ({
     flex: 1, padding: '8px 0', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600,
-    background: active ? '#7c6af7' : 'transparent',
+    background: active ? 'var(--accent)' : 'transparent',
     color: active ? '#fff' : '#666'
   }),
   card: { background: '#1a1a2e', borderRadius: 10, padding: 16, marginBottom: 14 },
@@ -21,8 +21,8 @@ const s = {
   select: { background: '#252540', border: '1px solid #333', borderRadius: 8, padding: '8px 12px', color: '#fff', fontSize: 13, width: '100%', marginBottom: 14, outline: 'none' },
   filterRow: { display: 'flex', gap: 8, marginBottom: 14 },
   filterBtn: (active) => ({
-    padding: '6px 12px', borderRadius: 20, border: `1px solid ${active ? '#7c6af7' : '#333'}`,
-    background: active ? '#7c6af722' : 'transparent', color: active ? '#a090ff' : '#666',
+    padding: '6px 12px', borderRadius: 20, border: `1px solid ${active ? 'var(--accent)' : '#333'}`,
+    background: active ? 'var(--accent-bg)' : 'transparent', color: active ? 'var(--accent-dim)' : '#666',
     fontSize: 11, cursor: 'pointer'
   }),
   statRow: { display: 'flex', justifyContent: 'space-around', marginBottom: 16 },
@@ -178,7 +178,7 @@ export default function Stats() {
                 <YAxis tick={{ fontSize: 9, fill: '#555' }} />
                 <CartesianGrid stroke="#252540" />
                 <Tooltip {...tooltipStyle()} formatter={v => [`${v} lbs`, 'Max Weight']} />
-                <Line type="monotone" dataKey="max_weight_lbs" stroke="#7c6af7" dot={{ r: 3, fill: '#7c6af7' }} strokeWidth={2} />
+                <Line type="monotone" dataKey="max_weight_lbs" stroke="var(--accent)" dot={{ r: 3, fill: 'var(--accent)' }} strokeWidth={2} />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -219,12 +219,12 @@ export default function Stats() {
                     <CartesianGrid stroke="#252540" />
                     <Tooltip {...tooltipStyle()} />
                     <Line type="monotone" dataKey="pain_level" stroke="#f7a76c" dot={false} strokeWidth={1.5} name="Pain" />
-                    <Line type="monotone" dataKey="energy_level" stroke="#7c6af7" dot={false} strokeWidth={1.5} name="Energy" />
+                    <Line type="monotone" dataKey="energy_level" stroke="var(--accent)" dot={false} strokeWidth={1.5} name="Energy" />
                   </LineChart>
                 </ResponsiveContainer>
                 <div style={s.legendRow}>
                   <div style={s.legendItem}><div style={s.legendLine('#f7a76c')} />Pain</div>
-                  <div style={s.legendItem}><div style={s.legendLine('#7c6af7')} />Energy</div>
+                  <div style={s.legendItem}><div style={s.legendLine('var(--accent)')} />Energy</div>
                 </div>
               </>
             )}

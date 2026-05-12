@@ -148,13 +148,13 @@ export default function Dashboard() {
 
       {/* Resume workout banner */}
       {activeWorkoutId && (
-        <div style={{ background: '#7c6af722', border: '1px solid #7c6af755', borderRadius: 10, padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ background: 'var(--accent-bg)', border: '1px solid var(--accent)', borderRadius: 10, padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <div style={{ fontSize: 14, fontWeight: 600, color: '#a090ff' }}>Workout in progress</div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--accent-dim)' }}>Workout in progress</div>
             <div style={{ fontSize: 12, color: '#666', marginTop: 2 }}>You have an unfinished workout</div>
           </div>
           <button
-            style={{ background: '#7c6af7', border: 'none', borderRadius: 8, padding: '8px 14px', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+            style={{ background: 'var(--accent)', border: 'none', borderRadius: 8, padding: '8px 14px', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
             onClick={() => navigate('/log/workout', { state: { resumeWorkoutId: Number(activeWorkoutId) } })}
           >Resume Workout</button>
         </div>
@@ -177,7 +177,7 @@ export default function Dashboard() {
         </div>
         <div style={s.todayCell}>
           <div style={s.cellLabel}>Energy</div>
-          <div style={s.cellValue('#7c6af7')}>
+          <div style={s.cellValue('var(--accent)')}>
             {todayWellness?.energy_level ?? '—'}
             {todayWellness && <span style={{ fontSize: 10, color: '#555', fontWeight: 400 }}> /10</span>}
           </div>
@@ -200,7 +200,7 @@ export default function Dashboard() {
         <DualLineChart data={healthData} />
         <div style={s.legendRow}>
           <div style={s.legendItem}><div style={s.legendLine('#f7a76c')} />Pain</div>
-          <div style={s.legendItem}><div style={s.legendLine('#7c6af7')} />Energy</div>
+          <div style={s.legendItem}><div style={s.legendLine('var(--accent)')} />Energy</div>
         </div>
       </StatCard>
 

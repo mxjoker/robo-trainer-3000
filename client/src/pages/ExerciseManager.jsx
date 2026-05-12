@@ -18,8 +18,8 @@ const s = {
   globalBadge: { fontSize: 10, color: '#555', background: '#252540', borderRadius: 4, padding: '2px 6px' },
   editInput: { background: '#252540', border: '1px solid #444', borderRadius: 6, color: '#fff', padding: '4px 8px', fontSize: 13, marginRight: 4 },
   select: { background: '#252540', border: '1px solid #444', borderRadius: 6, color: '#fff', padding: '4px 8px', fontSize: 12, marginRight: 4 },
-  iconBtn: (color = '#7c6af7') => ({ background: 'none', border: 'none', color, fontSize: 14, cursor: 'pointer', padding: '2px 6px' }),
-  btn: (color = '#7c6af7') => ({ width: '100%', padding: 13, background: color, border: 'none', borderRadius: 10, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', marginBottom: 8 }),
+  iconBtn: (color = 'var(--accent)') => ({ background: 'none', border: 'none', color, fontSize: 14, cursor: 'pointer', padding: '2px 6px' }),
+  btn: (color = 'var(--accent)') => ({ width: '100%', padding: 13, background: color, border: 'none', borderRadius: 10, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', marginBottom: 8 }),
   formRow: { display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 },
   formInput: { flex: 1, minWidth: 120, background: '#252540', border: '1px solid #444', borderRadius: 8, color: '#fff', padding: '8px 10px', fontSize: 13 },
   formSelect: { background: '#252540', border: '1px solid #444', borderRadius: 8, color: '#fff', padding: '8px 10px', fontSize: 13 },
@@ -119,7 +119,7 @@ export default function ExerciseManager() {
         </div>
         {isOwn ? (
           <div style={{ display: 'flex', gap: 4 }}>
-            <button style={s.iconBtn('#7c6af7')} onClick={() => startEdit(ex)}>✎</button>
+            <button style={s.iconBtn('var(--accent)')} onClick={() => startEdit(ex)}>✎</button>
             <button style={s.iconBtn('#ef4444')} onClick={() => deleteEx(ex.id)}>✕</button>
           </div>
         ) : (

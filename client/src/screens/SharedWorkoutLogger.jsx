@@ -6,14 +6,14 @@ import { parseClaudeTemplate } from '../utils/parseClaudeTemplate'
 
 const MUSCLE_GROUPS = ['chest', 'back', 'shoulders', 'biceps', 'triceps', 'legs', 'glutes', 'hamstrings', 'core', 'other']
 
-const COL = { joe: '#7c6af7', partner: '#f7a76c' }
+const COL = { joe: 'var(--accent)', partner: '#f472b6' }
 
 const s = {
   page: { padding: '16px 4px 100px' },
   header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
   title: { fontSize: 17, fontWeight: 700 },
-  backBtn: { background: 'none', border: 'none', color: '#7c6af7', fontSize: 14, cursor: 'pointer' },
-  sharedBadge: { background: '#7c6af722', border: '1px solid #7c6af755', borderRadius: 20, padding: '4px 12px', color: '#a090ff', fontSize: 11, marginBottom: 14, display: 'inline-block' },
+  backBtn: { background: 'none', border: 'none', color: 'var(--accent)', fontSize: 14, cursor: 'pointer' },
+  sharedBadge: { background: 'var(--accent-bg)', border: '1px solid var(--accent)', borderRadius: 20, padding: '4px 12px', color: 'var(--accent-dim)', fontSize: 11, marginBottom: 14, display: 'inline-block' },
   exerciseCard: { background: '#1a1a2e', borderRadius: 10, padding: 14, marginBottom: 12 },
   exerciseName: { fontSize: 14, fontWeight: 600, marginBottom: 10 },
   colHeaders: { display: 'grid', gridTemplateColumns: '28px 1fr 1fr 38px', gap: 5, marginBottom: 6, alignItems: 'center' },
@@ -30,17 +30,17 @@ const s = {
     background: done ? '#4caf8a' : '#252540', border: `1px solid ${done ? '#4caf8a' : '#333'}`,
     borderRadius: 6, color: done ? '#fff' : '#555', fontSize: 15, cursor: 'pointer', padding: '5px 0'
   }),
-  addExBtn: { background: '#1a1a2e', border: '1px solid #252540', borderRadius: 10, padding: 12, color: '#7c6af7', fontSize: 13, cursor: 'pointer', width: '100%', marginBottom: 12, fontWeight: 600 },
-  finishBtn: { background: '#7c6af7', border: 'none', borderRadius: 10, padding: 14, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', width: '100%', marginTop: 8 },
+  addExBtn: { background: '#1a1a2e', border: '1px solid #252540', borderRadius: 10, padding: 12, color: 'var(--accent)', fontSize: 13, cursor: 'pointer', width: '100%', marginBottom: 12, fontWeight: 600 },
+  finishBtn: { background: 'var(--accent)', border: 'none', borderRadius: 10, padding: 14, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', width: '100%', marginTop: 8 },
   picker: { background: '#111', border: '1px solid #333', borderRadius: 8, padding: 8, color: '#fff', fontSize: 14, width: '100%', marginBottom: 6, outline: 'none' },
-  cantFindLink: { background: 'none', border: 'none', color: '#7c6af7', fontSize: 12, cursor: 'pointer', padding: '4px 0', marginBottom: 12, display: 'block', textAlign: 'left' },
+  cantFindLink: { background: 'none', border: 'none', color: 'var(--accent)', fontSize: 12, cursor: 'pointer', padding: '4px 0', marginBottom: 12, display: 'block', textAlign: 'left' },
   newExForm: { background: '#1a1a2e', border: '1px solid #333', borderRadius: 10, padding: 14, marginBottom: 12 },
   newExInput: { background: '#252540', border: '1px solid #333', borderRadius: 6, padding: '9px 12px', color: '#fff', fontSize: 13, width: '100%', outline: 'none', marginBottom: 8 },
   newExSelect: { background: '#252540', border: '1px solid #333', borderRadius: 6, padding: '9px 12px', color: '#fff', fontSize: 13, width: '100%', outline: 'none', marginBottom: 8 },
   newExCheckRow: { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, fontSize: 13, color: '#ccc' },
   newExActions: { display: 'flex', gap: 8 },
-  addLogBtn: { flex: 1, background: '#7c6af7', border: 'none', borderRadius: 8, padding: '10px 0', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' },
-  cancelLink: { background: 'none', border: 'none', color: '#7c6af7', fontSize: 12, cursor: 'pointer', padding: '10px 8px' },
+  addLogBtn: { flex: 1, background: 'var(--accent)', border: 'none', borderRadius: 8, padding: '10px 0', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' },
+  cancelLink: { background: 'none', border: 'none', color: 'var(--accent)', fontSize: 12, cursor: 'pointer', padding: '10px 8px' },
 }
 
 function makeSet(prev = null) {
@@ -259,7 +259,7 @@ export default function SharedWorkoutLogger() {
           <div style={{ background: '#1a1a2e', borderRadius: 14, padding: 24, width: '100%', maxWidth: 340, display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div style={{ fontSize: 17, fontWeight: 700 }}>Log today's weight?</div>
             <div>
-              <div style={{ fontSize: 12, color: '#7c6af7', marginBottom: 6, fontWeight: 600 }}>{currentUser?.name?.split(' ')[0] || 'Joe'}</div>
+              <div style={{ fontSize: 12, color: 'var(--accent)', marginBottom: 6, fontWeight: 600 }}>{currentUser?.name?.split(' ')[0] || 'Joe'}</div>
               <input
                 style={{ background: '#252540', border: '1px solid #333', borderRadius: 8, padding: '10px 14px', color: '#fff', fontSize: 16, outline: 'none', width: '100%' }}
                 type="number" inputMode="decimal" placeholder="lbs (optional)"
@@ -268,7 +268,7 @@ export default function SharedWorkoutLogger() {
               />
             </div>
             <div>
-              <div style={{ fontSize: 12, color: '#f7a76c', marginBottom: 6, fontWeight: 600 }}>{currentUser?.partner_name?.split(' ')[0] || 'Partner'}</div>
+              <div style={{ fontSize: 12, color: '#f472b6', marginBottom: 6, fontWeight: 600 }}>{currentUser?.partner_name?.split(' ')[0] || 'Partner'}</div>
               <input
                 style={{ background: '#252540', border: '1px solid #333', borderRadius: 8, padding: '10px 14px', color: '#fff', fontSize: 16, outline: 'none', width: '100%' }}
                 type="number" inputMode="decimal" placeholder="lbs (optional)"
@@ -276,7 +276,7 @@ export default function SharedWorkoutLogger() {
               />
             </div>
             <button
-              style={{ background: '#7c6af7', border: 'none', borderRadius: 10, padding: 13, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
+              style={{ background: 'var(--accent)', border: 'none', borderRadius: 10, padding: 13, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
               onClick={submitWeights}
             >
               {(joeWeightInput || sydneyWeightInput) ? 'Log & Start Workout' : 'Skip'}
@@ -354,7 +354,7 @@ export default function SharedWorkoutLogger() {
                 {routines.map(r => (
                   <button
                     key={r.id}
-                    style={{ background: '#1a1a2e', border: '1px solid #252540', borderRadius: 10, padding: '10px 14px', color: '#a090ff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+                    style={{ background: '#1a1a2e', border: '1px solid #252540', borderRadius: 10, padding: '10px 14px', color: 'var(--accent-dim)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
                     onClick={() => loadTemplate(r)}
                   >
                     {r.name.replace(/\s*—.*/, '')}
@@ -365,8 +365,8 @@ export default function SharedWorkoutLogger() {
           )}
           <button
             style={{
-              border: '1px dashed #f7a76c55', borderRadius: 10, padding: 12, color: '#f7a76c',
-              fontSize: 13, cursor: 'pointer', width: '100%', marginBottom: 8, background: '#f7a76c10',
+              border: '1px dashed #f472b655', borderRadius: 10, padding: 12, color: '#f472b6',
+              fontSize: 13, cursor: 'pointer', width: '100%', marginBottom: 8, background: '#f472b610',
             }}
             onClick={() => setImportModalOpen(true)}
           >
@@ -442,14 +442,14 @@ export default function SharedWorkoutLogger() {
               aria-label="Paste shared template"
             />
             <button
-              style={{ background: '#7c6af7', border: 'none', borderRadius: 10, padding: 13, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
+              style={{ background: 'var(--accent)', border: 'none', borderRadius: 10, padding: 13, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
               onClick={handleImport}
               disabled={importing || !importText.trim()}
             >
               {importing ? 'Importing...' : 'Import'}
             </button>
             <button
-              style={{ background: 'none', border: 'none', color: '#7c6af7', fontSize: 13, cursor: 'pointer', padding: 8 }}
+              style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: 13, cursor: 'pointer', padding: 8 }}
               onClick={() => { setImportModalOpen(false); setImportText('') }}
             >
               Cancel

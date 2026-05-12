@@ -22,7 +22,7 @@ const s = {
   tile: { borderRadius: 10, overflow: 'hidden', position: 'relative', cursor: 'pointer' },
   photo: { width: '100%', height: 130, objectFit: 'cover', display: 'block' },
   caption: { padding: '5px 8px', background: '#1a1a2e', fontSize: 11, color: '#888' },
-  partnerTag: { position: 'absolute', top: 6, right: 6, width: 18, height: 18, borderRadius: '50%', background: '#f7a76c', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: '#12121f' },
+  partnerTag: { position: 'absolute', top: 6, right: 6, width: 18, height: 18, borderRadius: '50%', background: '#f472b6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: '#12121f' },
   empty: { textAlign: 'center', color: '#555', fontSize: 13, paddingTop: 60 },
   overlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, zIndex: 200 },
   modal: { background: '#1a1a2e', borderRadius: 14, width: '100%', maxWidth: 400, overflow: 'hidden', position: 'relative' },
@@ -141,7 +141,7 @@ export default function Photos() {
                   aria-label="change photo"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={photoLoading}
-                  style={{ width: '100%', padding: 10, background: '#252540', border: 'none', borderRadius: 8, color: '#a090ff', fontSize: 13, cursor: 'pointer' }}
+                  style={{ width: '100%', padding: 10, background: '#252540', border: 'none', borderRadius: 8, color: 'var(--accent-dim)', fontSize: 13, cursor: 'pointer' }}
                 >
                   {photoLoading ? 'Uploading...' : '📷 Change photo'}
                 </button>

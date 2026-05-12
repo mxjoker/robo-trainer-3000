@@ -48,20 +48,20 @@ export default function CalendarGrid({ dayMap, currentMonth, onDaySelect, onMont
           alignItems: 'center',
           padding: '4px 2px',
           borderRadius: 6,
-          border: isToday ? '1px solid #7c6af7' : '1px solid transparent',
+          border: isToday ? '1px solid var(--accent)' : '1px solid transparent',
           opacity: isFuture ? 0.4 : 1,
           cursor: 'pointer',
           minWidth: 0,
         }}
       >
-        <span style={{ fontSize: 12, color: isToday ? '#a090ff' : '#ccc' }}>{d}</span>
+        <span style={{ fontSize: 12, color: isToday ? 'var(--accent-dim)' : '#ccc' }}>{d}</span>
         <div style={{ display: 'flex', gap: 2, marginTop: 2, height: 5 }}>
           {loading ? (
             <div style={{ width: 4, height: 4, background: '#2a2a3a', borderRadius: '50%' }} />
           ) : (
             <>
               {hasWorkout && <div data-testid={`workout-dot-${dateStr}`} style={{ width: 4, height: 4, background: '#4caf50', borderRadius: '50%' }} />}
-              {hasWellness && <div data-testid={`wellness-dot-${dateStr}`} style={{ width: 4, height: 4, background: '#a090ff', borderRadius: '50%' }} />}
+              {hasWellness && <div data-testid={`wellness-dot-${dateStr}`} style={{ width: 4, height: 4, background: 'var(--accent-dim)', borderRadius: '50%' }} />}
             </>
           )}
         </div>
@@ -78,7 +78,7 @@ export default function CalendarGrid({ dayMap, currentMonth, onDaySelect, onMont
           disabled={loading}
           style={{ background: 'none', border: 'none', color: loading ? '#333' : '#888', fontSize: 20, cursor: loading ? 'default' : 'pointer', padding: '0 8px' }}
         >‹</button>
-        <span style={{ color: '#7c6af7', fontWeight: 700, fontSize: 13 }}>{MONTH_NAMES[month]} {year}</span>
+        <span style={{ color: 'var(--accent)', fontWeight: 700, fontSize: 13 }}>{MONTH_NAMES[month]} {year}</span>
         <button
           data-testid="next-month-btn"
           onClick={nextMonth}

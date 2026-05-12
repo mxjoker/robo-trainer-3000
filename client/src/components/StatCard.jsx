@@ -2,7 +2,7 @@ const s = {
   card: { background: '#1a1a2e', borderRadius: 10, padding: 14 },
   header: { display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12 },
   title: { fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.5px', color: '#fff', fontWeight: 600 },
-  link: { fontSize: 10, color: '#7c6af7', cursor: 'pointer', background: 'none', border: 'none', padding: 0 }
+  link: { fontSize: 10, color: 'var(--accent)', cursor: 'pointer', background: 'none', border: 'none', padding: 0 }
 }
 
 export default function StatCard({ title, linkLabel, onLink, children }) {
