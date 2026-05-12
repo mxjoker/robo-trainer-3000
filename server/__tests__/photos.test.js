@@ -14,6 +14,13 @@ beforeEach(async () => {
 
 afterAll(() => pool.end())
 
+describe('GET /api/photos (unauthenticated)', () => {
+  it('returns 401 without token', async () => {
+    const res = await request(app).get('/api/photos')
+    expect(res.status).toBe(401)
+  })
+})
+
 describe('POST /api/photos', () => {
   it('creates a standalone photo', async () => {
     const res = await request(app).post('/api/photos')
@@ -45,6 +52,13 @@ describe('GET /api/photos', () => {
     expect(res.status).toBe(200)
     expect(res.body).toHaveLength(1)
     expect(res.body[0].photo_url).toBe('https://cdn.example.com/a.jpg')
+  })
+})
+
+describe('DELETE /api/photos/:id (invalid id)', () => {
+  it('returns 400 for non-integer id', async () => {
+    const res = await request(app).delete('/api/photos/not-a-number').set(authHeader(joeToken))
+    expect(res.status).toBe(400)
   })
 })
 

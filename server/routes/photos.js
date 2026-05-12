@@ -35,9 +35,11 @@ router.post('/', async (req, res) => {
 
 router.delete('/:id', async (req, res) => {
   try {
+    const id = parseInt(req.params.id, 10)
+    if (!id || id < 1) return res.status(400).json({ error: 'Invalid id' })
     const result = await pool.query(
       'DELETE FROM progress_photos WHERE id = $1 AND user_id = $2 RETURNING id',
-      [req.params.id, req.user.id]
+      [id, req.user.id]
     )
     if (!result.rows[0]) return res.status(404).json({ error: 'Photo not found' })
     res.status(204).send()
