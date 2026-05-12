@@ -2,9 +2,12 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import WorkoutLogger from '../screens/WorkoutLogger'
 
+const mockNavigate = vi.fn()
+let locationState = null
+
 vi.mock('react-router-dom', () => ({
-  useNavigate: () => vi.fn(),
-  useLocation: () => ({ state: null }),
+  useNavigate: () => mockNavigate,
+  useLocation: () => ({ state: locationState }),
 }))
 
 vi.mock('../api/client', () => ({
@@ -25,6 +28,7 @@ const exercises = [
 
 beforeEach(() => {
   vi.clearAllMocks()
+  locationState = null
   api.get.mockResolvedValue(exercises)
   api.post.mockResolvedValue({ id: 5, sets: [], mobility_sets: [] })
 })
@@ -184,5 +188,48 @@ describe('WorkoutLogger — import banner & modal', () => {
 
     // api.post should only have been called once (POST /workouts — no POST /exercises for known exercise)
     expect(api.post).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('WorkoutLogger — cancel behavior', () => {
+  it('shows a discard/save modal when Cancel is clicked', async () => {
+    render(<WorkoutLogger />)
+    await waitFor(() => expect(api.post).toHaveBeenCalledWith('/workouts', expect.any(Object)))
+    fireEvent.click(screen.getByRole('button', { name: /cancel/i }))
+    expect(screen.getByText('Discard workout?')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /discard/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /save for later/i })).toBeInTheDocument()
+  })
+
+  it('calls DELETE and navigates home when Discard is confirmed', async () => {
+    api.delete.mockResolvedValueOnce({})
+
+    render(<WorkoutLogger />)
+    await waitFor(() => expect(api.post).toHaveBeenCalledWith('/workouts', expect.any(Object)))
+    fireEvent.click(screen.getByRole('button', { name: /cancel/i }))
+    fireEvent.click(screen.getByRole('button', { name: /discard/i }))
+
+    await waitFor(() => expect(api.delete).toHaveBeenCalledWith('/workouts/5'))
+    expect(mockNavigate).toHaveBeenCalledWith('/')
+  })
+})
+
+describe('WorkoutLogger — resume', () => {
+  it('loads existing sets when resumeWorkoutId is in location state', async () => {
+    locationState = { resumeWorkoutId: 99 }
+    api.get.mockImplementation(url => {
+      if (url === '/workouts/99') return Promise.resolve({
+        id: 99,
+        sets: [{ exercise_id: 1, exercise_name: 'Clamshell', set_number: 1, weight_lbs: '45', reps: 10 }],
+        mobility_sets: [],
+      })
+      return Promise.resolve(exercises)
+    })
+
+    render(<WorkoutLogger />)
+
+    await waitFor(() => expect(screen.getByText('Clamshell')).toBeInTheDocument())
+    // Should NOT create a new workout
+    expect(api.post).not.toHaveBeenCalledWith('/workouts', expect.any(Object))
   })
 })

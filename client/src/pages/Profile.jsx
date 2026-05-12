@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { useTheme } from '../context/ThemeContext'
 import { api } from '../api/client'
 import { requestAndSubscribe, isSupported, currentPermission } from '../services/pushService'
 
@@ -27,6 +28,7 @@ const s = {
 
 export default function Profile() {
   const { currentUser, logout } = useAuth()
+  const { scheme, setScheme, schemes } = useTheme()
   const navigate = useNavigate()
   const [inviteUrl, setInviteUrl] = useState('')
   const [exportFormat, setExportFormat] = useState('csv')
@@ -195,6 +197,30 @@ export default function Profile() {
           <span>Manage Exercises</span>
           <span style={{ color: '#555' }}>›</span>
         </button>
+      </div>
+
+      <div style={s.section}>
+        <div style={s.sectionLabel}>Color Scheme</div>
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+          {schemes.map(name => {
+            const colors = { purple: '#7c6af7', blue: '#4db6f7', green: '#4caf8a', coral: '#f76c6c' }
+            const active = scheme === name
+            return (
+              <button
+                key={name}
+                aria-label={`${name} scheme`}
+                onClick={() => setScheme(name)}
+                style={{
+                  width: 36, height: 36, borderRadius: '50%',
+                  background: colors[name],
+                  border: active ? '3px solid #fff' : '3px solid transparent',
+                  cursor: 'pointer',
+                  boxShadow: active ? `0 0 0 2px ${colors[name]}` : 'none',
+                }}
+              />
+            )
+          })}
+        </div>
       </div>
 
       <div style={s.divider} />

@@ -34,7 +34,10 @@ export default function DaySheet({ date, data, onClose, onLogWorkout, onLogWelln
       onPhotoChange?.(workout.id, updated.photo_url)
     } catch (err) {
       console.error('Photo upload error:', err)
-      setPhotoError('Upload failed. Please try again.')
+      const isConfig = err.message?.includes('not configured')
+      setPhotoError(isConfig
+        ? 'Photo uploads not set up. See client/.env.example.'
+        : 'Upload failed. Please try again.')
     } finally {
       setPhotoLoading(false)
       e.target.value = ''

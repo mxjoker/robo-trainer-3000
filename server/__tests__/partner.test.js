@@ -111,7 +111,7 @@ describe('POST /api/partner/workouts/:id/sets', () => {
     expect(res.body.error).toBe('No partner linked')
   })
 
-  it('returns 404 for a workout not owned by the partner', async () => {
+  it('returns 404 for a workout not owned by the partner — sets', async () => {
     // Create a third user with no relation to Joe or Sydney
     const { token: thirdToken } = await createUser({ name: 'Third', email: 'third@test.com', password: 'pw' })
 
@@ -128,6 +128,34 @@ describe('POST /api/partner/workouts/:id/sets', () => {
       .post(`/api/partner/workouts/${thirdWorkoutId}/sets`)
       .set(authHeader(joeToken))
       .send({ exercise_id: 1, set_number: 1, weight_lbs: 100, reps: 5 })
+    expect(res.status).toBe(404)
+  })
+})
+
+describe('PUT /api/partner/workouts/:id/photo', () => {
+  it("updates photo_url on a partner's workout", async () => {
+    const workoutRes = await request(app)
+      .post('/api/partner/workouts')
+      .set(authHeader(joeToken))
+      .send({ date: '2026-04-23' })
+    expect(workoutRes.status).toBe(201)
+    const workoutId = workoutRes.body.id
+
+    const res = await request(app)
+      .put(`/api/partner/workouts/${workoutId}/photo`)
+      .set(authHeader(joeToken))
+      .send({ photo_url: 'https://res.cloudinary.com/test/photo.jpg' })
+
+    expect(res.status).toBe(200)
+    expect(res.body.photo_url).toBe('https://res.cloudinary.com/test/photo.jpg')
+  })
+
+  it('returns 404 for a workout not belonging to the partner', async () => {
+    const res = await request(app)
+      .put('/api/partner/workouts/99999/photo')
+      .set(authHeader(joeToken))
+      .send({ photo_url: 'https://example.com/photo.jpg' })
+
     expect(res.status).toBe(404)
   })
 })

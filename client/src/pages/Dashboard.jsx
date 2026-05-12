@@ -69,6 +69,8 @@ export default function Dashboard() {
   const dayName = DAYS[now.getDay()]
   const dateStr = `${MONTHS[now.getMonth()]} ${now.getDate()}`
 
+  const [activeWorkoutId] = useState(() => localStorage.getItem('rt_active_workout_id'))
+
   // Stats + partner state
   const [consistency, setConsistency] = useState(null)
   const [healthData, setHealthData] = useState([])
@@ -143,6 +145,20 @@ export default function Dashboard() {
           <div style={s.streakSub}>Day streak</div>
         </div>
       </div>
+
+      {/* Resume workout banner */}
+      {activeWorkoutId && (
+        <div style={{ background: '#7c6af722', border: '1px solid #7c6af755', borderRadius: 10, padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: '#a090ff' }}>Workout in progress</div>
+            <div style={{ fontSize: 12, color: '#666', marginTop: 2 }}>You have an unfinished workout</div>
+          </div>
+          <button
+            style={{ background: '#7c6af7', border: 'none', borderRadius: 8, padding: '8px 14px', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+            onClick={() => navigate('/log/workout', { state: { resumeWorkoutId: Number(activeWorkoutId) } })}
+          >Resume Workout</button>
+        </div>
+      )}
 
       {/* Today's status */}
       <div style={s.todayRow}>

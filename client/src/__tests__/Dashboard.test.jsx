@@ -166,6 +166,13 @@ describe('Dashboard', () => {
     })
   })
 
+  it('shows Resume Workout banner when rt_active_workout_id is in localStorage', async () => {
+    localStorage.setItem('rt_active_workout_id', '42')
+    renderDashboard()
+    await waitFor(() => expect(screen.getByText(/resume workout/i)).toBeInTheDocument())
+    localStorage.removeItem('rt_active_workout_id')
+  })
+
   it('shows partner card when partner data is available', async () => {
     api.get.mockImplementation((path) => {
       if (path === '/partner/profile') {
