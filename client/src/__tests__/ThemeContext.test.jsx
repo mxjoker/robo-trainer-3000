@@ -17,9 +17,9 @@ function Probe() {
 beforeEach(() => localStorage.clear())
 
 describe('ThemeContext', () => {
-  it('defaults to purple scheme', () => {
+  it('defaults to blue scheme', () => {
     render(<ThemeProvider><Probe /></ThemeProvider>)
-    expect(screen.getByTestId('accent').textContent).toBe('#7c6af7')
+    expect(screen.getByTestId('accent').textContent).toBe('#4db6f7')
   })
 
   it('switches scheme and persists to localStorage', () => {
