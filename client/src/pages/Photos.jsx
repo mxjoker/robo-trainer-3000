@@ -67,23 +67,26 @@ export default function Photos() {
 
   useEffect(() => {
     async function load() {
-      const myWorkouts = await api.get('/workouts')
-      let partnerWorkouts = []
-      if (currentUser.partner_id) {
-        partnerWorkouts = await api.get('/partner/workouts').catch(() => [])
-      }
+      const hasPartner = !!currentUser.partner_id
+      const [myWorkouts, myPhotos, partnerWorkouts, partnerPhotos] = await Promise.all([
+        api.get('/workouts'),
+        api.get('/photos'),
+        hasPartner ? api.get('/partner/workouts').catch(() => []) : Promise.resolve([]),
+        hasPartner ? api.get('/partner/photos').catch(() => []) : Promise.resolve([]),
+      ])
+
       const all = [
-        ...myWorkouts.map(w => ({ ...w, isPartner: false })),
-        ...partnerWorkouts.map(w => ({ ...w, isPartner: true })),
-      ]
-        .filter(w => w.photo_url)
-        .sort((a, b) => b.date.localeCompare(a.date))
+        ...myWorkouts.filter(w => w.photo_url).map(w => ({ ...w, type: 'workout', isPartner: false })),
+        ...myPhotos.map(p => ({ ...p, type: 'standalone', isPartner: false })),
+        ...partnerWorkouts.filter(w => w.photo_url).map(w => ({ ...w, type: 'workout', isPartner: true })),
+        ...partnerPhotos.map(p => ({ ...p, type: 'standalone', isPartner: true })),
+      ].sort((a, b) => b.date.localeCompare(a.date))
 
       const map = {}
-      for (const w of all) {
-        const key = monthLabel(w.date)
+      for (const item of all) {
+        const key = monthLabel(item.date)
         if (!map[key]) map[key] = []
-        map[key].push(w)
+        map[key].push(item)
       }
       setGroups(map)
     }
@@ -104,12 +107,27 @@ export default function Photos() {
           <div key={month}>
             <div style={s.monthLabel}>{month}</div>
             <div style={s.grid}>
-              {groups[month].map(w => (
-                <div key={w.id} style={s.tile} onClick={() => setSelected(w)}>
-                  <img src={thumbnailUrl(w.photo_url)} alt={w.notes || 'Workout'} style={s.photo} />
-                  {w.isPartner && <div style={s.partnerTag}>P</div>}
+              {groups[month].map(item => (
+                <div key={`${item.type}-${item.id}`} style={s.tile} onClick={() => setSelected(item)}>
+                  <img
+                    src={thumbnailUrl(item.photo_url)}
+                    alt={item.notes || (item.type === 'workout' ? 'Workout' : 'Progress photo')}
+                    style={s.photo}
+                  />
+                  {item.isPartner && item.type === 'workout' && (
+                    <div style={s.partnerTag}>P</div>
+                  )}
+                  {item.type === 'standalone' && item.isPartner && (
+                    <>
+                      <div style={s.partnerTag}>P</div>
+                      <div style={{ position: 'absolute', bottom: 30, right: 6, fontSize: 12 }}>📷</div>
+                    </>
+                  )}
+                  {item.type === 'standalone' && !item.isPartner && (
+                    <div data-testid={`standalone-badge-${item.id}`} style={{ position: 'absolute', bottom: 30, right: 6, fontSize: 12 }}>📷</div>
+                  )}
                   <div style={s.caption}>
-                    {w.date.split('T')[0]} · {w.notes || 'Workout'}
+                    {item.date.split('T')[0]} · {item.notes || (item.type === 'workout' ? 'Workout' : '')}
                   </div>
                 </div>
               ))}

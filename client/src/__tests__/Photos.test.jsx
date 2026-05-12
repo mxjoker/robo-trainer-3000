@@ -33,6 +33,13 @@ const workoutNoPhoto = {
   sets: [],
 }
 
+const standalonePhoto = {
+  id: 50,
+  date: '2026-04-20',
+  photo_url: 'https://res.cloudinary.com/test/image/upload/v1/standalone.jpg',
+  notes: 'Week 8 check-in',
+}
+
 function renderPhotos() {
   return render(
     <MemoryRouter>
@@ -55,7 +62,11 @@ describe('Photos', () => {
   })
 
   it('renders a photo tile for each workout with a photo_url', async () => {
-    api.get.mockResolvedValueOnce([workoutWithPhoto, workoutNoPhoto]).mockResolvedValueOnce([])
+    api.get
+      .mockResolvedValueOnce([workoutWithPhoto, workoutNoPhoto])  // /workouts
+      .mockResolvedValueOnce([])   // /photos
+      .mockResolvedValueOnce([])   // /partner/workouts
+      .mockResolvedValueOnce([])   // /partner/photos
     renderPhotos()
     await waitFor(() => {
       expect(screen.getByRole('img', { name: /Push Day/i })).toBeInTheDocument()
@@ -72,8 +83,10 @@ describe('Photos', () => {
       isPartner: true,
     }
     api.get
-      .mockResolvedValueOnce([])                  // /workouts
-      .mockResolvedValueOnce([partnerWorkout])     // /partner/workouts
+      .mockResolvedValueOnce([])                 // /workouts
+      .mockResolvedValueOnce([])                 // /photos
+      .mockResolvedValueOnce([partnerWorkout])   // /partner/workouts
+      .mockResolvedValueOnce([])                 // /partner/photos
     api.put.mockResolvedValue({ photo_url: 'https://res.cloudinary.com/test/new.jpg' })
 
     renderPhotos()
@@ -99,11 +112,44 @@ describe('Photos', () => {
       photo_url: 'https://res.cloudinary.com/test/image/upload/v1/leg.jpg',
       sets: [],
     }
-    api.get.mockResolvedValue([workoutWithPhoto, marchWorkout])
+    api.get
+      .mockResolvedValueOnce([workoutWithPhoto, marchWorkout])  // /workouts
+      .mockResolvedValueOnce([])   // /photos
+      .mockResolvedValueOnce([])   // /partner/workouts
+      .mockResolvedValueOnce([])   // /partner/photos
     renderPhotos()
     await waitFor(() => {
       expect(screen.getByText('April 2026')).toBeInTheDocument()
       expect(screen.getByText('March 2026')).toBeInTheDocument()
     })
+  })
+
+  it('renders standalone photo tile with camera badge', async () => {
+    api.get
+      .mockResolvedValueOnce([])                // /workouts
+      .mockResolvedValueOnce([standalonePhoto]) // /photos
+      .mockResolvedValueOnce([])                // /partner/workouts
+      .mockResolvedValueOnce([])                // /partner/photos
+
+    renderPhotos()
+    await waitFor(() => {
+      expect(screen.getByRole('img', { name: /Week 8 check-in/i })).toBeInTheDocument()
+    })
+    // Camera badge rendered for standalone
+    expect(screen.getByTestId('standalone-badge-50')).toBeInTheDocument()
+  })
+
+  it('merges workout and standalone photos in same month group', async () => {
+    const sameMonthWorkout = { ...workoutWithPhoto, id: 20, date: '2026-04-15', notes: 'Leg Day' }
+    api.get
+      .mockResolvedValueOnce([sameMonthWorkout])  // /workouts
+      .mockResolvedValueOnce([standalonePhoto])   // /photos
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([])
+
+    renderPhotos()
+    await waitFor(() => expect(screen.getByText('April 2026')).toBeInTheDocument())
+    expect(screen.getByRole('img', { name: /Leg Day/i })).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: /Week 8 check-in/i })).toBeInTheDocument()
   })
 })
