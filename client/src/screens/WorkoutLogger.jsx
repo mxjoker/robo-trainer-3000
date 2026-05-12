@@ -37,6 +37,22 @@ function makeSet(prev = null) {
   return { weight: prev?.weight ?? '', reps: prev?.reps ?? '10', confirmed: false, dbId: null }
 }
 
+function groupSetsIntoExercises(sets) {
+  const grouped = {}
+  for (const s of sets) {
+    if (!grouped[s.exercise_id]) {
+      grouped[s.exercise_id] = { exerciseId: s.exercise_id, exerciseName: s.exercise_name, sets: [] }
+    }
+    grouped[s.exercise_id].sets.push({
+      weight: String(s.weight_lbs ?? ''),
+      reps: String(s.reps ?? '10'),
+      confirmed: true,
+      dbId: s.id,
+    })
+  }
+  return Object.values(grouped)
+}
+
 export default function WorkoutLogger() {
   const navigate = useNavigate()
   const { state } = useLocation()
@@ -71,32 +87,45 @@ export default function WorkoutLogger() {
   const [partnerPrs, setPartnerPrs] = useState({})
 
   useEffect(() => {
-    api.get('/exercises').then(setAllExercises)
-    api.get('/routines').then(setRoutines).catch(() => {})
-    api.get('/exercises/prs').then(setPrs).catch(() => {})
-    if (forPartner) api.get('/partner/exercises/prs').then(setPartnerPrs).catch(() => {})
+    async function init() {
+      const [fetchedExercises, fetchedRoutines] = await Promise.all([
+        api.get('/exercises'),
+        api.get('/routines').catch(() => []),
+      ])
+      setAllExercises(fetchedExercises)
+      setRoutines(fetchedRoutines)
+      if (forPartner) {
+        api.get('/partner/exercises/prs').then(setPartnerPrs).catch(() => {})
+      } else {
+        api.get('/exercises/prs').then(setPrs).catch(() => {})
+      }
 
-    if (resumeWorkoutId) {
-      setWorkoutId(resumeWorkoutId)
-      api.get(`/workouts/${resumeWorkoutId}`).then(workout => {
-        const grouped = {}
-        for (const s of workout.sets) {
-          if (!grouped[s.exercise_id]) {
-            grouped[s.exercise_id] = { exerciseId: s.exercise_id, exerciseName: s.exercise_name, sets: [] }
-          }
-          grouped[s.exercise_id].sets.push({
-            weight: String(s.weight_lbs ?? ''),
-            reps: String(s.reps ?? '10'),
-            confirmed: true,
-          })
+      if (resumeWorkoutId) {
+        setWorkoutId(resumeWorkoutId)
+        api.get(`/workouts/${resumeWorkoutId}`).then(workout => {
+          setLoggedExercises(groupSetsIntoExercises(workout.sets))
+        }).catch(() => {})
+        localStorage.removeItem('rt_active_workout_id')
+        setWeightModalDone(true)
+        return
+      }
+
+      const today = new Date().toISOString().split('T')[0]
+      const todayWorkouts = await api.get(`/workouts?start=${today}&end=${today}`)
+
+      if (todayWorkouts.length > 0) {
+        const todayWorkout = todayWorkouts[0]
+        setWorkoutId(todayWorkout.id)
+        if (todayWorkout.sets.length > 0) {
+          setLoggedExercises(groupSetsIntoExercises(todayWorkout.sets))
+          setWeightModalDone(true)
         }
-        setLoggedExercises(Object.values(grouped))
-      }).catch(() => {})
-      localStorage.removeItem('rt_active_workout_id')
-    } else {
-      api.post('/workouts', { date: new Date().toISOString().split('T')[0], is_shared: false })
-        .then(w => setWorkoutId(w.id))
+      } else {
+        api.post('/workouts', { date: today, is_shared: false })
+          .then(w => setWorkoutId(w.id))
+      }
     }
+    init()
   }, [])
 
   async function handleDiscard() {

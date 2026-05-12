@@ -242,6 +242,60 @@ describe('WorkoutLogger — resume', () => {
   })
 })
 
+describe('WorkoutLogger — auto-resume', () => {
+  const todayWorkoutWithSets = {
+    id: 42,
+    date: new Date().toISOString().split('T')[0],
+    sets: [
+      { id: 100, exercise_id: 1, exercise_name: 'Clamshell', weight_lbs: '50.00', reps: 8, set_number: 1 },
+    ],
+    mobility_sets: [],
+  }
+
+  it("auto-resumes today's workout and skips weight modal when sets exist", async () => {
+    api.get.mockImplementation(url => {
+      if (url === '/exercises') return Promise.resolve(exercises)
+      if (url === '/routines') return Promise.resolve([])
+      if (url === '/exercises/prs') return Promise.resolve({})
+      if (url.startsWith('/workouts?')) return Promise.resolve([todayWorkoutWithSets])
+      return Promise.resolve([])
+    })
+
+    render(<WorkoutLogger />)
+
+    // Weight modal should NOT appear
+    await waitFor(() => expect(screen.queryByText("Log today's weight?")).not.toBeInTheDocument())
+    // Exercise from today's workout should be shown
+    await waitFor(() => expect(screen.getByText('Clamshell')).toBeInTheDocument())
+    // No new workout should have been created
+    expect(api.post).not.toHaveBeenCalledWith('/workouts', expect.any(Object))
+  })
+
+  it("shows weight modal when today's workout has 0 sets", async () => {
+    const emptyTodayWorkout = { id: 43, date: new Date().toISOString().split('T')[0], sets: [], mobility_sets: [] }
+    api.get.mockImplementation(url => {
+      if (url === '/exercises') return Promise.resolve(exercises)
+      if (url === '/routines') return Promise.resolve([])
+      if (url === '/exercises/prs') return Promise.resolve({})
+      if (url.startsWith('/workouts?')) return Promise.resolve([emptyTodayWorkout])
+      return Promise.resolve([])
+    })
+
+    render(<WorkoutLogger />)
+
+    await waitFor(() => expect(screen.getByText("Log today's weight?")).toBeInTheDocument())
+    expect(api.post).not.toHaveBeenCalledWith('/workouts', expect.any(Object))
+  })
+
+  it("creates a new workout when none exists for today", async () => {
+    // Default mock already returns [] for /workouts? — from updated beforeEach
+    render(<WorkoutLogger />)
+
+    await waitFor(() => expect(api.post).toHaveBeenCalledWith('/workouts', expect.objectContaining({ is_shared: false })))
+    await waitFor(() => expect(screen.getByText("Log today's weight?")).toBeInTheDocument())
+  })
+})
+
 describe('WorkoutLogger — per-set auto-save', () => {
   it('POSTs a set to the API when a new set is confirmed', async () => {
     api.post
