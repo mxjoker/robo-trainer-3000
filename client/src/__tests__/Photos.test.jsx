@@ -4,7 +4,7 @@ import { MemoryRouter } from 'react-router-dom'
 import Photos from '../pages/Photos'
 
 vi.mock('../api/client', () => ({
-  api: { get: vi.fn(), put: vi.fn(), post: vi.fn() }
+  api: { get: vi.fn(), put: vi.fn(), post: vi.fn(), delete: vi.fn() }
 }))
 
 vi.mock('../context/AuthContext', () => ({
@@ -194,5 +194,47 @@ describe('Photos', () => {
         photo_url: 'https://res.cloudinary.com/test/new.jpg',
       }))
     )
+  })
+
+  it('shows delete button in lightbox for own standalone photo', async () => {
+    api.get
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([standalonePhoto])
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([])
+
+    renderPhotos()
+    await waitFor(() => fireEvent.click(screen.getByRole('img', { name: /Week 8 check-in/i })))
+    expect(screen.getByRole('button', { name: /delete photo/i })).toBeInTheDocument()
+  })
+
+  it('calls DELETE /photos/:id and removes photo from grid', async () => {
+    const { api: apiMock } = await import('../api/client')
+    apiMock.delete = vi.fn().mockResolvedValue(null)
+
+    api.get
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([standalonePhoto])
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([])
+
+    renderPhotos()
+    await waitFor(() => fireEvent.click(screen.getByRole('img', { name: /Week 8 check-in/i })))
+    fireEvent.click(screen.getByRole('button', { name: /delete photo/i }))
+
+    await waitFor(() => expect(apiMock.delete).toHaveBeenCalledWith(`/photos/${standalonePhoto.id}`))
+    expect(screen.queryByRole('img', { name: /Week 8 check-in/i })).not.toBeInTheDocument()
+  })
+
+  it('shows Change photo button for partner standalone photo in lightbox', async () => {
+    api.get
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([{ id: 60, date: '2026-04-20', photo_url: standalonePhoto.photo_url, notes: 'Partner check-in' }])
+
+    renderPhotos()
+    await waitFor(() => fireEvent.click(screen.getByRole('img', { name: /Partner check-in/i })))
+    expect(screen.getByRole('button', { name: /change photo/i })).toBeInTheDocument()
   })
 })

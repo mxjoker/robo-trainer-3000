@@ -40,6 +40,9 @@ export default function Photos() {
   const [photoLoading, setPhotoLoading] = useState(false)
   const [photoError, setPhotoError] = useState(null)
   const fileInputRef = useRef(null)
+  const [lightboxPhotoLoading, setLightboxPhotoLoading] = useState(false)
+  const [lightboxPhotoError, setLightboxPhotoError] = useState(null)
+  const lightboxFileRef = useRef(null)
   const [showUpload, setShowUpload] = useState(false)
   const [uploadFor, setUploadFor] = useState('mine')
   const [uploadDate, setUploadDate] = useState(() => new Date().toISOString().split('T')[0])
@@ -68,6 +71,50 @@ export default function Photos() {
       setPhotoError('Upload failed. Please try again.')
     } finally {
       setPhotoLoading(false)
+      e.target.value = ''
+    }
+  }
+
+  async function handleDeleteStandalonePhoto(photo) {
+    try {
+      await api.delete(`/photos/${photo.id}`)
+      setSelected(null)
+      setGroups(prev => {
+        const next = { ...prev }
+        for (const key of Object.keys(next)) {
+          next[key] = next[key].filter(p => !(p.type === 'standalone' && p.id === photo.id && !p.isPartner))
+        }
+        return next
+      })
+    } catch {
+      // silent — photo stays in grid
+    }
+  }
+
+  async function handlePartnerStandalonePhotoUpload(e, photo) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setLightboxPhotoLoading(true)
+    setLightboxPhotoError(null)
+    try {
+      const url = await uploadToCloudinary(file)
+      await api.delete(`/partner/photos/${photo.id}`)
+      const saved = await api.post('/partner/photos', { photo_url: url, date: photo.date, notes: photo.notes })
+      const newItem = { ...saved, type: 'standalone', isPartner: true }
+      setSelected(newItem)
+      setGroups(prev => {
+        const next = { ...prev }
+        for (const key of Object.keys(next)) {
+          next[key] = next[key].map(p =>
+            p.type === 'standalone' && p.isPartner && p.id === photo.id ? newItem : p
+          )
+        }
+        return next
+      })
+    } catch {
+      setLightboxPhotoError('Upload failed. Please try again.')
+    } finally {
+      setLightboxPhotoLoading(false)
       e.target.value = ''
     }
   }
@@ -259,15 +306,21 @@ export default function Photos() {
       )}
 
       {selected && (
-        <div style={s.overlay} onClick={() => setSelected(null)}>
+        <div style={s.overlay} onClick={() => { setSelected(null); setLightboxPhotoError(null) }}>
           <div style={s.modal} onClick={e => e.stopPropagation()}>
-            <button style={s.modalClose} onClick={() => setSelected(null)}>✕</button>
-            <img src={selected.photo_url} alt={selected.notes || 'Workout'} style={s.modalPhoto} />
+            <button style={s.modalClose} onClick={() => { setSelected(null); setLightboxPhotoError(null) }}>✕</button>
+            <img
+              src={selected.photo_url}
+              alt={selected.notes || (selected.type === 'workout' ? 'Workout' : 'Progress photo')}
+              style={s.modalPhoto}
+            />
             <div style={s.modalInfo}>
-              <div style={s.modalDate}>{selected.date.split('T')[0]}</div>
+              <div style={s.modalDate}>{selected.date?.split('T')[0]}</div>
               <div style={s.modalNotes}>{selected.notes || 'No notes'}</div>
             </div>
-            {selected.isPartner && (
+
+            {/* Partner workout photo — existing Change photo button */}
+            {selected.type === 'workout' && selected.isPartner && (
               <div style={{ padding: '0 16px 16px' }}>
                 <input
                   data-testid="partner-photo-input"
@@ -286,6 +339,42 @@ export default function Photos() {
                   {photoLoading ? 'Uploading...' : '📷 Change photo'}
                 </button>
                 {photoError && <div style={{ fontSize: 11, color: '#e05555', marginTop: 6 }}>{photoError}</div>}
+              </div>
+            )}
+
+            {/* Own standalone photo — delete button */}
+            {selected.type === 'standalone' && !selected.isPartner && (
+              <div style={{ padding: '0 16px 16px' }}>
+                <button
+                  aria-label="Delete photo"
+                  onClick={() => handleDeleteStandalonePhoto(selected)}
+                  style={{ width: '100%', padding: 10, background: 'transparent', border: '1px solid #e05555', borderRadius: 8, color: '#e05555', fontSize: 13, cursor: 'pointer' }}
+                >
+                  🗑 Delete photo
+                </button>
+              </div>
+            )}
+
+            {/* Partner standalone photo — change photo */}
+            {selected.type === 'standalone' && selected.isPartner && (
+              <div style={{ padding: '0 16px 16px' }}>
+                <input
+                  data-testid="partner-standalone-photo-input"
+                  ref={lightboxFileRef}
+                  type="file"
+                  accept="image/*"
+                  style={{ display: 'none' }}
+                  onChange={e => handlePartnerStandalonePhotoUpload(e, selected)}
+                />
+                <button
+                  aria-label="change photo"
+                  onClick={() => lightboxFileRef.current?.click()}
+                  disabled={lightboxPhotoLoading}
+                  style={{ width: '100%', padding: 10, background: '#252540', border: 'none', borderRadius: 8, color: 'var(--accent-dim)', fontSize: 13, cursor: 'pointer' }}
+                >
+                  {lightboxPhotoLoading ? 'Uploading...' : '📷 Change photo'}
+                </button>
+                {lightboxPhotoError && <div style={{ fontSize: 11, color: '#e05555', marginTop: 6 }}>{lightboxPhotoError}</div>}
               </div>
             )}
           </div>
