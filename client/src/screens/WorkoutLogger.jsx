@@ -105,7 +105,6 @@ export default function WorkoutLogger() {
         api.get(`/workouts/${resumeWorkoutId}`).then(workout => {
           setLoggedExercises(groupSetsIntoExercises(workout.sets))
         }).catch(() => {})
-        localStorage.removeItem('rt_active_workout_id')
         setWeightModalDone(true)
         return
       }
@@ -132,7 +131,6 @@ export default function WorkoutLogger() {
     if (workoutId) {
       try { await api.delete(`/workouts/${workoutId}`) } catch { /* non-critical */ }
     }
-    localStorage.removeItem('rt_active_workout_id')
     navigate('/')
   }
 
@@ -338,22 +336,7 @@ export default function WorkoutLogger() {
     if (!workoutId) return
     setSaving(true)
     try {
-      for (const ex of loggedExercises) {
-        const confirmedSets = ex.sets.filter(s => s.confirmed)
-        for (let i = 0; i < confirmedSets.length; i++) {
-          const s = confirmedSets[i]
-          await api.post(`/workouts/${workoutId}/sets`, {
-            exercise_id: ex.exerciseId,
-            set_number: i + 1,
-            weight_lbs: s.weight ? Number(s.weight) : null,
-            reps: s.reps ? Number(s.reps) : null
-          })
-        }
-      }
-      localStorage.removeItem('rt_active_workout_id')
       navigate('/')
-    } catch (err) {
-      alert('Error saving workout: ' + err.message)
     } finally {
       setSaving(false)
     }
@@ -399,10 +382,10 @@ export default function WorkoutLogger() {
               onClick={handleDiscard}
             >Discard</button>
             <button
-              aria-label="save for later"
+              aria-label="continue later"
               style={{ background: '#252540', border: '1px solid #333', borderRadius: 10, padding: 12, color: '#ccc', fontSize: 14, cursor: 'pointer' }}
-              onClick={() => { localStorage.setItem('rt_active_workout_id', String(workoutId)); navigate('/') }}
-            >Save for later</button>
+              onClick={() => navigate('/')}
+            >Continue Later</button>
             <button
               style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: 13, cursor: 'pointer' }}
               onClick={() => setShowCancelModal(false)}

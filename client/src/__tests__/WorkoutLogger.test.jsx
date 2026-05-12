@@ -206,7 +206,7 @@ describe('WorkoutLogger — cancel behavior', () => {
     fireEvent.click(screen.getByRole('button', { name: /cancel/i }))
     expect(screen.getByText('Discard workout?')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /discard/i })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /save for later/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /continue later/i })).toBeInTheDocument()
   })
 
   it('calls DELETE and navigates home when Discard is confirmed', async () => {
@@ -293,6 +293,20 @@ describe('WorkoutLogger — auto-resume', () => {
 
     await waitFor(() => expect(api.post).toHaveBeenCalledWith('/workouts', expect.objectContaining({ is_shared: false })))
     await waitFor(() => expect(screen.getByText("Log today's weight?")).toBeInTheDocument())
+  })
+})
+
+describe('WorkoutLogger — finish()', () => {
+  it('navigates home without POSTing sets when Finish Workout is clicked', async () => {
+    render(<WorkoutLogger />)
+    await waitFor(() => expect(screen.getByText('Finish Workout')).toBeInTheDocument())
+
+    fireEvent.click(screen.getByText('Finish Workout'))
+
+    await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/'))
+    // Sets should NOT be POSTed in finish() — they were already saved on confirm
+    const setCalls = api.post.mock.calls.filter(c => c[0].includes('/sets'))
+    expect(setCalls).toHaveLength(0)
   })
 })
 
