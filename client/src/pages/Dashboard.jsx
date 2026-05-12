@@ -244,6 +244,22 @@ export default function Dashboard() {
         onClose={() => setSelectedDate(null)}
         onLogWorkout={() => { setSelectedDate(null); navigate('/log/workout') }}
         onLogWellness={() => { setSelectedDate(null); navigate('/log/wellness') }}
+        onEditWorkout={id => {
+          setSelectedDate(null)
+          navigate('/log/workout', { state: { resumeWorkoutId: id } })
+        }}
+        onWorkoutDelete={workoutId => {
+          setDayMap(prev => {
+            const next = { ...prev }
+            for (const key of Object.keys(next)) {
+              if (next[key]?.workout?.id === workoutId) {
+                next[key] = { ...next[key], workout: undefined }
+              }
+            }
+            return next
+          })
+          setSelectedDate(null)
+        }}
         onPhotoChange={(workoutId, photoUrl) => {
           setDayMap(prev => {
             const newMap = { ...prev }
