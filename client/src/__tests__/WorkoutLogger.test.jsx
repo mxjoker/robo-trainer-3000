@@ -29,8 +29,16 @@ const exercises = [
 beforeEach(() => {
   vi.clearAllMocks()
   locationState = null
-  api.get.mockResolvedValue(exercises)
+
+  api.get.mockImplementation(url => {
+    if (url === '/exercises') return Promise.resolve(exercises)
+    if (url === '/routines') return Promise.resolve([])
+    if (url === '/exercises/prs') return Promise.resolve({})
+    if (url.startsWith('/workouts?')) return Promise.resolve([])  // no today's workout by default
+    return Promise.resolve([])
+  })
   api.post.mockResolvedValue({ id: 5, sets: [], mobility_sets: [] })
+  api.put.mockResolvedValue({})
 })
 
 describe('WorkoutLogger — mobility section', () => {
@@ -231,5 +239,75 @@ describe('WorkoutLogger — resume', () => {
     await waitFor(() => expect(screen.getByText('Clamshell')).toBeInTheDocument())
     // Should NOT create a new workout
     expect(api.post).not.toHaveBeenCalledWith('/workouts', expect.any(Object))
+  })
+})
+
+describe('WorkoutLogger — per-set auto-save', () => {
+  it('POSTs a set to the API when a new set is confirmed', async () => {
+    api.post
+      .mockResolvedValueOnce({ id: 5, sets: [], mobility_sets: [] }) // POST /workouts
+      .mockResolvedValueOnce({ id: 101, exercise_id: 1, set_number: 1, weight_lbs: '50', reps: 8 }) // POST /workouts/5/sets
+
+    render(<WorkoutLogger />)
+    await waitFor(() => expect(screen.getByText('+ Add Exercise')).toBeInTheDocument())
+
+    // Simulate adding an exercise
+    fireEvent.click(screen.getByText('+ Add Exercise'))
+    await waitFor(() => expect(screen.getByRole('combobox')).toBeInTheDocument())
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: '1' } })
+
+    // Fill in weight and reps for set 1
+    const weightInputs = screen.getAllByPlaceholderText('lbs')
+    const repsInputs = screen.getAllByPlaceholderText('reps')
+    fireEvent.change(weightInputs[0], { target: { value: '50' } })
+    fireEvent.change(repsInputs[0], { target: { value: '8' } })
+
+    // Confirm the set
+    const confirmBtns = screen.getAllByText('✓')
+    fireEvent.click(confirmBtns[0])
+
+    await waitFor(() =>
+      expect(api.post).toHaveBeenCalledWith('/workouts/5/sets', expect.objectContaining({
+        exercise_id: 1,
+        set_number: 1,
+        weight_lbs: 50,
+        reps: 8,
+      }))
+    )
+  })
+
+  it('PUTs the set when re-confirming an already-saved set', async () => {
+    api.post
+      .mockResolvedValueOnce({ id: 5, sets: [], mobility_sets: [] })
+      .mockResolvedValueOnce({ id: 101, exercise_id: 1, set_number: 1, weight_lbs: '50', reps: 8 })
+
+    render(<WorkoutLogger />)
+    await waitFor(() => expect(screen.getByText('+ Add Exercise')).toBeInTheDocument())
+
+    fireEvent.click(screen.getByText('+ Add Exercise'))
+    await waitFor(() => expect(screen.getByRole('combobox')).toBeInTheDocument())
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: '1' } })
+
+    const weightInputs = screen.getAllByPlaceholderText('lbs')
+    const repsInputs = screen.getAllByPlaceholderText('reps')
+    fireEvent.change(weightInputs[0], { target: { value: '50' } })
+    fireEvent.change(repsInputs[0], { target: { value: '8' } })
+
+    // First confirm — saves new set, gets dbId 101
+    fireEvent.click(screen.getAllByText('✓')[0])
+    await waitFor(() => expect(api.post).toHaveBeenCalledWith('/workouts/5/sets', expect.any(Object)))
+
+    // Edit the weight (this de-confirms the set)
+    fireEvent.change(screen.getAllByPlaceholderText('lbs')[0], { target: { value: '55' } })
+
+    // Re-confirm — should PUT, not POST again
+    fireEvent.click(screen.getAllByText('✓')[0])
+    await waitFor(() =>
+      expect(api.put).toHaveBeenCalledWith('/workouts/sets/101', expect.objectContaining({
+        weight_lbs: 55,
+      }))
+    )
+    // api.post should still have been called only twice (/workouts + /workouts/5/sets)
+    expect(api.post).toHaveBeenCalledTimes(2)
   })
 })

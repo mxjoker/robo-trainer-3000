@@ -34,7 +34,7 @@ const s = {
 }
 
 function makeSet(prev = null) {
-  return { weight: prev?.weight ?? '', reps: prev?.reps ?? '10', confirmed: false }
+  return { weight: prev?.weight ?? '', reps: prev?.reps ?? '10', confirmed: false, dbId: null }
 }
 
 export default function WorkoutLogger() {
@@ -45,6 +45,7 @@ export default function WorkoutLogger() {
   const [allExercises, setAllExercises] = useState([])
   const [workoutId, setWorkoutId] = useState(null)
   const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState(null)
   const [showPicker, setShowPicker] = useState(false)
   const [showNewForm, setShowNewForm] = useState(false)
   const [newName, setNewName] = useState('')
@@ -152,18 +153,44 @@ export default function WorkoutLogger() {
     }))
   }
 
-  function confirmSet(exIdx, setIdx) {
-    setLoggedExercises(prev => prev.map((ex, i) => {
-      if (i !== exIdx) return ex
-      const sets = ex.sets.map((set, j) => {
-        if (j !== setIdx) return set
-        return { ...set, confirmed: true }
-      })
-      // Auto-add next set pre-filled if this was the last
-      const isLast = setIdx === ex.sets.length - 1
+  async function confirmSet(exIdx, setIdx) {
+    const ex = loggedExercises[exIdx]
+    const set = ex.sets[setIdx]
+    const weightLbs = set.weight ? Number(set.weight) : null
+    const reps = set.reps ? Number(set.reps) : null
+
+    setLoggedExercises(prev => prev.map((e, i) => {
+      if (i !== exIdx) return e
+      const sets = e.sets.map((s, j) => j === setIdx ? { ...s, confirmed: true } : s)
+      const isLast = setIdx === e.sets.length - 1
       const newSets = isLast ? [...sets, makeSet(sets[setIdx])] : sets
-      return { ...ex, sets: newSets }
+      return { ...e, sets: newSets }
     }))
+
+    if (!workoutId) return
+    try {
+      if (set.dbId === null) {
+        const saved = await api.post(`/workouts/${workoutId}/sets`, {
+          exercise_id: ex.exerciseId,
+          set_number: setIdx + 1,
+          weight_lbs: weightLbs,
+          reps,
+        })
+        setSaveError(null)
+        setLoggedExercises(prev => prev.map((e, i) => {
+          if (i !== exIdx) return e
+          return {
+            ...e,
+            sets: e.sets.map((s, j) => j === setIdx ? { ...s, dbId: saved.id } : s),
+          }
+        }))
+      } else {
+        await api.put(`/workouts/sets/${set.dbId}`, { weight_lbs: weightLbs, reps })
+        setSaveError(null)
+      }
+    } catch {
+      setSaveError('Set not saved — check connection')
+    }
   }
 
   async function addMobilitySet() {
@@ -305,6 +332,12 @@ export default function WorkoutLogger() {
 
   return (
     <div style={s.page}>
+      {saveError && (
+        <div style={{ background: '#3a1010', border: '1px solid #e05555', borderRadius: 8, padding: '8px 12px', marginBottom: 12, fontSize: 12, color: '#e05555', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          {saveError}
+          <button onClick={() => setSaveError(null)} style={{ background: 'none', border: 'none', color: '#e05555', cursor: 'pointer', fontSize: 16, lineHeight: 1 }}>×</button>
+        </div>
+      )}
       {!weightModalDone && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, zIndex: 200 }}>
           <div style={{ background: '#1a1a2e', borderRadius: 14, padding: 24, width: '100%', maxWidth: 340, display: 'flex', flexDirection: 'column', gap: 14 }}>
