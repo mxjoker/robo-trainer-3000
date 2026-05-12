@@ -6,7 +6,7 @@ const { createUser, authHeader } = require('./helpers')
 let joeToken, joeId
 
 beforeEach(async () => {
-  await pool.query('TRUNCATE users CASCADE')
+  await pool.query('TRUNCATE progress_photos, users CASCADE')
   const joe = await createUser({ name: 'Joe', email: 'joe@test.com', password: 'pw' })
   joeToken = joe.token
   joeId = joe.user.id
