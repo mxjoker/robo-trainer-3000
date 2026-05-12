@@ -177,6 +177,47 @@ describe('DaySheet', () => {
     expect(screen.queryByText(/Add progress photo/)).not.toBeInTheDocument()
   })
 
+  const workoutWithSets = {
+    id: 1,
+    notes: 'Push Day',
+    duration_minutes: 45,
+    sets: [
+      { id: 10, exercise_id: 1, exercise_name: 'Bench Press', weight_lbs: '185.00', reps: 8, set_number: 1 },
+      { id: 11, exercise_id: 1, exercise_name: 'Bench Press', weight_lbs: '185.00', reps: 7, set_number: 2 },
+      { id: 12, exercise_id: 2, exercise_name: 'OHP', weight_lbs: '115.00', reps: 8, set_number: 1 },
+    ],
+    mobility_sets: [],
+  }
+
+  it('shows exercise names collapsed by default (no set detail)', () => {
+    render(
+      <DaySheet date="2026-04-21" data={{ workout: workoutWithSets }} onClose={() => {}} onLogWorkout={() => {}} onLogWellness={() => {}} />
+    )
+    // Exercise names visible as summary
+    expect(screen.getByText(/Bench Press/)).toBeInTheDocument()
+    // Individual set rows not visible
+    expect(screen.queryByText(/185/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/115/)).not.toBeInTheDocument()
+  })
+
+  it('expands to show set detail when workout card is tapped', () => {
+    render(
+      <DaySheet date="2026-04-21" data={{ workout: workoutWithSets }} onClose={() => {}} onLogWorkout={() => {}} onLogWellness={() => {}} />
+    )
+    fireEvent.click(screen.getByTestId('workout-card'))
+    expect(screen.getByText(/185/)).toBeInTheDocument()
+    expect(screen.getByText(/115/)).toBeInTheDocument()
+  })
+
+  it('collapses set detail when workout card is tapped again', () => {
+    render(
+      <DaySheet date="2026-04-21" data={{ workout: workoutWithSets }} onClose={() => {}} onLogWorkout={() => {}} onLogWellness={() => {}} />
+    )
+    fireEvent.click(screen.getByTestId('workout-card'))
+    fireEvent.click(screen.getByTestId('workout-card'))
+    expect(screen.queryByText(/185/)).not.toBeInTheDocument()
+  })
+
   it('calls api.put with null and onPhotoChange when Remove is clicked', async () => {
     api.put.mockResolvedValue({ id: 1, photo_url: null })
     const onPhotoChange = vi.fn()

@@ -15,6 +15,7 @@ export default function DaySheet({ date, data, onClose, onLogWorkout, onLogWelln
   const [photoUrl, setPhotoUrl] = useState(workout?.photo_url ?? null)
   const [photoLoading, setPhotoLoading] = useState(false)
   const [photoError, setPhotoError] = useState(null)
+  const [expandedSets, setExpandedSets] = useState(false)
   const fileInputRef = useRef(null)
 
   if (!date) return null
@@ -91,23 +92,52 @@ export default function DaySheet({ date, data, onClose, onLogWorkout, onLogWelln
         ) : (
           <>
             {workout && (
-              <div style={{ background: '#1a1a2e', borderRadius: 10, padding: 14, marginBottom: 10 }}>
-                <div style={{ color: '#4caf50', fontWeight: 600, fontSize: 13, marginBottom: 6 }}>
-                  💪 {workout.notes || 'Workout'}
-                  {workout.duration_minutes != null && (
-                    <span style={{ color: '#555', fontWeight: 400, fontSize: 11 }}> · {workout.duration_minutes} min</span>
-                  )}
+              <div
+                data-testid="workout-card"
+                onClick={() => setExpandedSets(e => !e)}
+                style={{ background: '#1a1a2e', borderRadius: 10, padding: 14, marginBottom: 10, cursor: 'pointer' }}
+              >
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ color: '#4caf50', fontWeight: 600, fontSize: 13, marginBottom: 6 }}>
+                      💪 {workout.notes || 'Workout'}
+                      {workout.duration_minutes != null && (
+                        <span style={{ color: '#555', fontWeight: 400, fontSize: 11 }}> · {workout.duration_minutes} min</span>
+                      )}
+                    </div>
+                    {!expandedSets && exerciseNames.length > 0 && (
+                      <div style={{ color: '#888', fontSize: 12, lineHeight: 1.6 }}>
+                        {exerciseNames.join(' · ')}
+                      </div>
+                    )}
+                    {expandedSets && (() => {
+                      const grouped = {}
+                      for (const s of workout.sets) {
+                        if (!grouped[s.exercise_name]) grouped[s.exercise_name] = []
+                        grouped[s.exercise_name].push(s)
+                      }
+                      return Object.entries(grouped).map(([name, sets]) => {
+                        const setsSummary = sets.map(s =>
+                          `${s.weight_lbs ? `${parseFloat(s.weight_lbs)} lbs` : '—'} × ${s.reps ?? '—'}`
+                        ).join(' · ')
+                        return (
+                          <div key={name} style={{ marginTop: 8 }}>
+                            <div style={{ fontSize: 12, fontWeight: 600, color: '#ccc', marginBottom: 3 }}>{name}</div>
+                            <div style={{ fontSize: 11, color: '#a0aec0' }}>{setsSummary}</div>
+                          </div>
+                        )
+                      })
+                    })()}
+                    {workout.mobility_sets?.length > 0 && (
+                      <div style={{ color: 'var(--accent-dim)', fontSize: 12, marginTop: 4 }}>
+                        Mobility: {workout.mobility_sets.map(ms => ms.exercise_name).join(' · ')}
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ fontSize: 14, color: '#555', marginLeft: 8, flexShrink: 0 }}>
+                    {expandedSets ? '▴' : '▾'}
+                  </div>
                 </div>
-                {exerciseNames.length > 0 && (
-                  <div style={{ color: '#888', fontSize: 12, lineHeight: 1.6 }}>
-                    {exerciseNames.join(' · ')}
-                  </div>
-                )}
-                {workout.mobility_sets?.length > 0 && (
-                  <div style={{ color: '#4db6f7', fontSize: 12, marginTop: 4 }}>
-                    Mobility: {workout.mobility_sets.map(ms => ms.exercise_name).join(' · ')}
-                  </div>
-                )}
               </div>
             )}
 
