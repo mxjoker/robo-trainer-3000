@@ -4,7 +4,7 @@ import { MemoryRouter } from 'react-router-dom'
 import Photos from '../pages/Photos'
 
 vi.mock('../api/client', () => ({
-  api: { get: vi.fn(), put: vi.fn() }
+  api: { get: vi.fn(), put: vi.fn(), post: vi.fn() }
 }))
 
 vi.mock('../context/AuthContext', () => ({
@@ -151,5 +151,48 @@ describe('Photos', () => {
     await waitFor(() => expect(screen.getByText('April 2026')).toBeInTheDocument())
     expect(screen.getByRole('img', { name: /Leg Day/i })).toBeInTheDocument()
     expect(screen.getByRole('img', { name: /Week 8 check-in/i })).toBeInTheDocument()
+  })
+
+  it('shows upload button on the Photos page', async () => {
+    api.get.mockResolvedValue([])
+    renderPhotos()
+    await waitFor(() => expect(screen.getByRole('button', { name: /add photo/i })).toBeInTheDocument())
+  })
+
+  it('opens upload modal when the add photo button is clicked', async () => {
+    api.get.mockResolvedValue([])
+    renderPhotos()
+    await waitFor(() => fireEvent.click(screen.getByRole('button', { name: /add photo/i })))
+    expect(screen.getByPlaceholderText(/caption/i)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /upload/i })).toBeInTheDocument()
+  })
+
+  it('posts to /photos for own photo and adds to grid', async () => {
+    const { uploadToCloudinary } = await import('../services/cloudinaryService')
+    api.get.mockResolvedValue([])
+    api.post.mockResolvedValue({
+      id: 99,
+      date: '2026-05-12',
+      photo_url: 'https://res.cloudinary.com/test/new.jpg',
+      notes: 'Test upload',
+    })
+
+    renderPhotos()
+    await waitFor(() => fireEvent.click(screen.getByRole('button', { name: /add photo/i })))
+
+    fireEvent.change(screen.getByPlaceholderText(/caption/i), { target: { value: 'Test upload' } })
+
+    const file = new File(['img'], 'photo.jpg', { type: 'image/jpeg' })
+    const fileInput = screen.getByTestId('photo-upload-input')
+    fireEvent.change(fileInput, { target: { files: [file] } })
+
+    fireEvent.click(screen.getByRole('button', { name: /upload/i }))
+
+    await waitFor(() =>
+      expect(api.post).toHaveBeenCalledWith('/photos', expect.objectContaining({
+        notes: 'Test upload',
+        photo_url: 'https://res.cloudinary.com/test/new.jpg',
+      }))
+    )
   })
 })

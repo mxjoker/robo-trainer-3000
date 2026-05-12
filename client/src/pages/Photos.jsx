@@ -40,6 +40,13 @@ export default function Photos() {
   const [photoLoading, setPhotoLoading] = useState(false)
   const [photoError, setPhotoError] = useState(null)
   const fileInputRef = useRef(null)
+  const [showUpload, setShowUpload] = useState(false)
+  const [uploadFor, setUploadFor] = useState('mine')
+  const [uploadDate, setUploadDate] = useState(() => new Date().toISOString().split('T')[0])
+  const [uploadNotes, setUploadNotes] = useState('')
+  const [uploading, setUploading] = useState(false)
+  const [uploadError, setUploadError] = useState(null)
+  const uploadFileRef = useRef(null)
 
   async function handlePartnerPhotoUpload(e) {
     const file = e.target.files?.[0]
@@ -62,6 +69,38 @@ export default function Photos() {
     } finally {
       setPhotoLoading(false)
       e.target.value = ''
+    }
+  }
+
+  async function handleUploadSubmit() {
+    const file = uploadFileRef.current?.files?.[0]
+    if (!file) return
+    setUploading(true)
+    setUploadError(null)
+    try {
+      const url = await uploadToCloudinary(file)
+      const endpoint = uploadFor === 'partner' ? '/partner/photos' : '/photos'
+      const saved = await api.post(endpoint, {
+        photo_url: url,
+        date: uploadDate,
+        notes: uploadNotes || null,
+      })
+      const newItem = { ...saved, type: 'standalone', isPartner: uploadFor === 'partner' }
+      const key = monthLabel(newItem.date)
+      setGroups(prev => {
+        const next = { ...prev }
+        next[key] = [newItem, ...(next[key] || [])].sort((a, b) => b.date.localeCompare(a.date))
+        return next
+      })
+      setShowUpload(false)
+      setUploadNotes('')
+      setUploadDate(new Date().toISOString().split('T')[0])
+      if (uploadFileRef.current) uploadFileRef.current.value = ''
+    } catch (err) {
+      const isConfig = err.message?.includes('not configured')
+      setUploadError(isConfig ? 'Photo uploads not set up. See client/.env.example.' : 'Upload failed. Please try again.')
+    } finally {
+      setUploading(false)
     }
   }
 
@@ -134,6 +173,89 @@ export default function Photos() {
             </div>
           </div>
         ))
+      )}
+
+      <button
+        aria-label="Add photo"
+        onClick={() => setShowUpload(true)}
+        style={{
+          position: 'fixed', bottom: 74, right: 12, zIndex: 200,
+          width: 52, height: 52, borderRadius: '50%', background: 'var(--accent)',
+          border: 'none', color: '#fff', fontSize: 28, fontWeight: 300,
+          cursor: 'pointer', boxShadow: '0 4px 16px rgba(0,0,0,0.25)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}
+      >+</button>
+
+      {showUpload && (
+        <>
+          <div onClick={() => setShowUpload(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 210 }} />
+          <div style={{
+            position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 211,
+            background: '#12121f', borderRadius: '16px 16px 0 0',
+            padding: '12px 16px 48px', maxWidth: 480, margin: '0 auto',
+          }}>
+            <div style={{ width: 36, height: 4, background: '#333', borderRadius: 2, margin: '0 auto 16px' }} />
+            <div style={{ fontSize: 15, fontWeight: 700, color: '#fff', marginBottom: 16 }}>Add Progress Photo</div>
+
+            {currentUser.partner_id && (
+              <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
+                {['mine', 'partner'].map(opt => (
+                  <button
+                    key={opt}
+                    onClick={() => setUploadFor(opt)}
+                    style={{
+                      flex: 1, padding: '8px 0', borderRadius: 20,
+                      border: `1px solid ${uploadFor === opt ? 'var(--accent)' : '#333'}`,
+                      background: uploadFor === opt ? 'var(--accent-bg)' : 'transparent',
+                      color: uploadFor === opt ? 'var(--accent)' : '#666',
+                      fontSize: 13, cursor: 'pointer',
+                    }}
+                  >
+                    {opt === 'mine' ? 'Mine' : 'Partner'}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <input
+              type="date"
+              value={uploadDate}
+              onChange={e => setUploadDate(e.target.value)}
+              style={{ background: '#252540', border: '1px solid #333', borderRadius: 8, padding: '10px 12px', color: '#fff', fontSize: 14, width: '100%', outline: 'none', marginBottom: 10 }}
+            />
+            <input
+              type="text"
+              placeholder="Caption (optional)"
+              value={uploadNotes}
+              onChange={e => setUploadNotes(e.target.value)}
+              style={{ background: '#252540', border: '1px solid #333', borderRadius: 8, padding: '10px 12px', color: '#fff', fontSize: 14, width: '100%', outline: 'none', marginBottom: 10 }}
+            />
+            <input
+              data-testid="photo-upload-input"
+              ref={uploadFileRef}
+              type="file"
+              accept="image/*"
+              style={{ display: 'none' }}
+              onChange={() => {}}
+            />
+            <button
+              onClick={() => uploadFileRef.current?.click()}
+              style={{ width: '100%', padding: 12, background: 'transparent', border: '1.5px dashed #333', borderRadius: 10, color: '#555', fontSize: 13, cursor: 'pointer', marginBottom: 10 }}
+            >
+              📷 Choose photo
+            </button>
+            {uploadError && <div style={{ fontSize: 11, color: '#e05555', marginBottom: 8 }}>{uploadError}</div>}
+            <button
+              aria-label="Upload"
+              onClick={handleUploadSubmit}
+              disabled={uploading}
+              style={{ width: '100%', padding: 13, background: 'var(--accent)', border: 'none', borderRadius: 10, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
+            >
+              {uploading ? 'Uploading...' : 'Upload'}
+            </button>
+          </div>
+        </>
       )}
 
       {selected && (
