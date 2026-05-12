@@ -29,8 +29,16 @@ const exercises = [
 beforeEach(() => {
   vi.clearAllMocks()
   locationState = null
-  api.get.mockResolvedValue(exercises)
+
+  api.get.mockImplementation(url => {
+    if (url === '/exercises') return Promise.resolve(exercises)
+    if (url === '/routines') return Promise.resolve([])
+    if (url === '/exercises/prs') return Promise.resolve({})
+    if (url.startsWith('/workouts?')) return Promise.resolve([])  // no today's workout by default
+    return Promise.resolve([])
+  })
   api.post.mockResolvedValue({ id: 5, sets: [], mobility_sets: [] })
+  api.put.mockResolvedValue({})
 })
 
 describe('WorkoutLogger — mobility section', () => {
@@ -198,7 +206,7 @@ describe('WorkoutLogger — cancel behavior', () => {
     fireEvent.click(screen.getByRole('button', { name: /cancel/i }))
     expect(screen.getByText('Discard workout?')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /discard/i })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /save for later/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /continue later/i })).toBeInTheDocument()
   })
 
   it('calls DELETE and navigates home when Discard is confirmed', async () => {
@@ -231,5 +239,143 @@ describe('WorkoutLogger — resume', () => {
     await waitFor(() => expect(screen.getByText('Clamshell')).toBeInTheDocument())
     // Should NOT create a new workout
     expect(api.post).not.toHaveBeenCalledWith('/workouts', expect.any(Object))
+  })
+})
+
+describe('WorkoutLogger — auto-resume', () => {
+  const todayWorkoutWithSets = {
+    id: 42,
+    date: new Date().toISOString().split('T')[0],
+    sets: [
+      { id: 100, exercise_id: 1, exercise_name: 'Clamshell', weight_lbs: '50.00', reps: 8, set_number: 1 },
+    ],
+    mobility_sets: [],
+  }
+
+  it("auto-resumes today's workout and skips weight modal when sets exist", async () => {
+    api.get.mockImplementation(url => {
+      if (url === '/exercises') return Promise.resolve(exercises)
+      if (url === '/routines') return Promise.resolve([])
+      if (url === '/exercises/prs') return Promise.resolve({})
+      if (url.startsWith('/workouts?')) return Promise.resolve([todayWorkoutWithSets])
+      return Promise.resolve([])
+    })
+
+    render(<WorkoutLogger />)
+
+    // Weight modal should NOT appear
+    await waitFor(() => expect(screen.queryByText("Log today's weight?")).not.toBeInTheDocument())
+    // Exercise from today's workout should be shown
+    await waitFor(() => expect(screen.getByText('Clamshell')).toBeInTheDocument())
+    // No new workout should have been created
+    expect(api.post).not.toHaveBeenCalledWith('/workouts', expect.any(Object))
+  })
+
+  it("shows weight modal when today's workout has 0 sets", async () => {
+    const emptyTodayWorkout = { id: 43, date: new Date().toISOString().split('T')[0], sets: [], mobility_sets: [] }
+    api.get.mockImplementation(url => {
+      if (url === '/exercises') return Promise.resolve(exercises)
+      if (url === '/routines') return Promise.resolve([])
+      if (url === '/exercises/prs') return Promise.resolve({})
+      if (url.startsWith('/workouts?')) return Promise.resolve([emptyTodayWorkout])
+      return Promise.resolve([])
+    })
+
+    render(<WorkoutLogger />)
+
+    await waitFor(() => expect(screen.getByText("Log today's weight?")).toBeInTheDocument())
+    expect(api.post).not.toHaveBeenCalledWith('/workouts', expect.any(Object))
+  })
+
+  it("creates a new workout when none exists for today", async () => {
+    // Default mock already returns [] for /workouts? — from updated beforeEach
+    render(<WorkoutLogger />)
+
+    await waitFor(() => expect(api.post).toHaveBeenCalledWith('/workouts', expect.objectContaining({ is_shared: false })))
+    await waitFor(() => expect(screen.getByText("Log today's weight?")).toBeInTheDocument())
+  })
+})
+
+describe('WorkoutLogger — finish()', () => {
+  it('navigates home without POSTing sets when Finish Workout is clicked', async () => {
+    render(<WorkoutLogger />)
+    await waitFor(() => expect(screen.getByText('Finish Workout')).toBeInTheDocument())
+
+    fireEvent.click(screen.getByText('Finish Workout'))
+
+    await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/'))
+    // Sets should NOT be POSTed in finish() — they were already saved on confirm
+    const setCalls = api.post.mock.calls.filter(c => c[0].includes('/sets'))
+    expect(setCalls).toHaveLength(0)
+  })
+})
+
+describe('WorkoutLogger — per-set auto-save', () => {
+  it('POSTs a set to the API when a new set is confirmed', async () => {
+    api.post
+      .mockResolvedValueOnce({ id: 5, sets: [], mobility_sets: [] }) // POST /workouts
+      .mockResolvedValueOnce({ id: 101, exercise_id: 1, set_number: 1, weight_lbs: '50', reps: 8 }) // POST /workouts/5/sets
+
+    render(<WorkoutLogger />)
+    await waitFor(() => expect(screen.getByText('+ Add Exercise')).toBeInTheDocument())
+
+    // Simulate adding an exercise
+    fireEvent.click(screen.getByText('+ Add Exercise'))
+    await waitFor(() => expect(screen.getByRole('combobox')).toBeInTheDocument())
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: '1' } })
+
+    // Fill in weight and reps for set 1
+    const weightInputs = screen.getAllByPlaceholderText('lbs')
+    const repsInputs = screen.getAllByPlaceholderText('reps')
+    fireEvent.change(weightInputs[0], { target: { value: '50' } })
+    fireEvent.change(repsInputs[0], { target: { value: '8' } })
+
+    // Confirm the set
+    const confirmBtns = screen.getAllByText('✓')
+    fireEvent.click(confirmBtns[0])
+
+    await waitFor(() =>
+      expect(api.post).toHaveBeenCalledWith('/workouts/5/sets', expect.objectContaining({
+        exercise_id: 1,
+        set_number: 1,
+        weight_lbs: 50,
+        reps: 8,
+      }))
+    )
+  })
+
+  it('PUTs the set when re-confirming an already-saved set', async () => {
+    api.post
+      .mockResolvedValueOnce({ id: 5, sets: [], mobility_sets: [] })
+      .mockResolvedValueOnce({ id: 101, exercise_id: 1, set_number: 1, weight_lbs: '50', reps: 8 })
+
+    render(<WorkoutLogger />)
+    await waitFor(() => expect(screen.getByText('+ Add Exercise')).toBeInTheDocument())
+
+    fireEvent.click(screen.getByText('+ Add Exercise'))
+    await waitFor(() => expect(screen.getByRole('combobox')).toBeInTheDocument())
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: '1' } })
+
+    const weightInputs = screen.getAllByPlaceholderText('lbs')
+    const repsInputs = screen.getAllByPlaceholderText('reps')
+    fireEvent.change(weightInputs[0], { target: { value: '50' } })
+    fireEvent.change(repsInputs[0], { target: { value: '8' } })
+
+    // First confirm — saves new set, gets dbId 101
+    fireEvent.click(screen.getAllByText('✓')[0])
+    await waitFor(() => expect(api.post).toHaveBeenCalledWith('/workouts/5/sets', expect.any(Object)))
+
+    // Edit the weight (this de-confirms the set)
+    fireEvent.change(screen.getAllByPlaceholderText('lbs')[0], { target: { value: '55' } })
+
+    // Re-confirm — should PUT, not POST again
+    fireEvent.click(screen.getAllByText('✓')[0])
+    await waitFor(() =>
+      expect(api.put).toHaveBeenCalledWith('/workouts/sets/101', expect.objectContaining({
+        weight_lbs: 55,
+      }))
+    )
+    // api.post should still have been called only twice (/workouts + /workouts/5/sets)
+    expect(api.post).toHaveBeenCalledTimes(2)
   })
 })

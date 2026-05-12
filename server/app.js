@@ -12,6 +12,7 @@ const statsRoutes = require('./routes/stats')
 const exportRoutes = require('./routes/export')
 const { router: notificationsRoutes } = require('./routes/notifications')
 const publicRoutes = require('./routes/public')
+const photosRoutes = require('./routes/photos')
 
 const app = express()
 
@@ -32,6 +33,7 @@ app.use('/api/stats', statsRoutes)
 app.use('/api/export', exportRoutes)
 app.use('/api/notifications', notificationsRoutes)
 app.use('/api/public', publicRoutes)
+app.use('/api/photos', photosRoutes)
 
 // Central error handler — must be last middleware
 // eslint-disable-next-line no-unused-vars

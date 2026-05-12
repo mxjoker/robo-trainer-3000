@@ -159,3 +159,34 @@ describe('PUT /api/partner/workouts/:id/photo', () => {
     expect(res.status).toBe(404)
   })
 })
+
+describe('POST /api/partner/photos', () => {
+  it("creates a standalone photo for Sydney (Joe's partner)", async () => {
+    const res = await request(app).post('/api/partner/photos')
+      .set(authHeader(joeToken))
+      .send({ date: '2026-05-10', photo_url: 'https://cdn.example.com/syd.jpg', notes: 'Check-in' })
+    expect(res.status).toBe(201)
+    expect(res.body.notes).toBe('Check-in')
+  })
+})
+
+describe('GET /api/partner/photos', () => {
+  it("returns Sydney's standalone photos when Joe requests", async () => {
+    await request(app).post('/api/partner/photos')
+      .set(authHeader(joeToken))
+      .send({ date: '2026-05-10', photo_url: 'https://cdn.example.com/syd.jpg' })
+    const res = await request(app).get('/api/partner/photos').set(authHeader(joeToken))
+    expect(res.status).toBe(200)
+    expect(res.body).toHaveLength(1)
+  })
+})
+
+describe('DELETE /api/partner/photos/:id', () => {
+  it("deletes Sydney's photo when Joe requests", async () => {
+    const { body: photo } = await request(app).post('/api/partner/photos')
+      .set(authHeader(joeToken))
+      .send({ date: '2026-05-10', photo_url: 'https://cdn.example.com/syd.jpg' })
+    const res = await request(app).delete(`/api/partner/photos/${photo.id}`).set(authHeader(joeToken))
+    expect(res.status).toBe(204)
+  })
+})

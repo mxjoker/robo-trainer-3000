@@ -10,8 +10,8 @@ const s = {
   sectionLabel: { fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.5px', color: '#555', marginBottom: 8 },
   row: { display: 'flex', gap: 10, marginBottom: 20 },
   typeBtn: (active) => ({
-    flex: 1, padding: '14px 0', borderRadius: 10, border: `2px solid ${active ? '#7c6af7' : 'transparent'}`,
-    background: active ? '#7c6af722' : '#252540', color: active ? '#a090ff' : '#888',
+    flex: 1, padding: '14px 0', borderRadius: 10, border: `2px solid ${active ? 'var(--accent)' : 'transparent'}`,
+    background: active ? 'var(--accent-bg)' : '#252540', color: active ? 'var(--accent-dim)' : '#888',
     fontSize: 13, fontWeight: 600, cursor: 'pointer', textAlign: 'center'
   }),
   personBtn: (active, color) => ({
@@ -22,7 +22,7 @@ const s = {
     cursor: 'pointer', textAlign: 'center', position: 'relative'
   }),
   check: { position: 'absolute', top: 6, right: 10, fontSize: 11 },
-  cta: { width: '100%', padding: 14, background: '#7c6af7', border: 'none', borderRadius: 10, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', marginTop: 8 },
+  cta: { width: '100%', padding: 14, background: 'var(--accent)', border: 'none', borderRadius: 10, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', marginTop: 8 },
   note: { fontSize: 11, color: '#555', textAlign: 'center', marginTop: 10 }
 }
 
@@ -66,14 +66,14 @@ export default function LogSheet({ onClose }) {
 
         <div style={s.sectionLabel}>For who? {type === 'workout' ? '(tap to toggle)' : '(wellness is individual)'}</div>
         <div style={s.row}>
-          <button style={s.personBtn(forJoe, '#7c6af7')} onClick={() => type === 'workout' ? setForJoe(v => forPartner ? !v : true) : setForJoe(true)}>
+          <button style={s.personBtn(forJoe, 'var(--accent)')} onClick={() => type === 'workout' ? setForJoe(v => forPartner ? !v : true) : setForJoe(true)}>
             {forJoe && <span style={s.check}>✓</span>}
             {currentUser.name?.charAt(0) || 'J'}
             <div style={{ fontSize: 11, marginTop: 2 }}>{currentUser.name?.split(' ')[0] || 'You'}</div>
           </button>
           {currentUser.partner_id && (
-            <button style={s.personBtn(forPartner, '#f7a76c')} onClick={() => type === 'workout' && setForPartner(v => !v)} disabled={type === 'wellness'}>
-              {forPartner && <span style={{ ...s.check, color: '#f7a76c' }}>✓</span>}
+            <button style={s.personBtn(forPartner, '#f472b6')} onClick={() => type === 'workout' && setForPartner(v => !v)} disabled={type === 'wellness'}>
+              {forPartner && <span style={{ ...s.check, color: '#f472b6' }}>✓</span>}
               {partnerName.charAt(0)}
               <div style={{ fontSize: 11, marginTop: 2 }}>{partnerName.split(' ')[0]}</div>
             </button>
@@ -81,7 +81,7 @@ export default function LogSheet({ onClose }) {
         </div>
 
         {bothSelected && (
-          <div style={{ background: '#7c6af722', border: '1px solid #7c6af755', borderRadius: 8, padding: 10, marginBottom: 12, fontSize: 11, color: '#a090ff', textAlign: 'center' }}>
+          <div style={{ background: 'var(--accent-bg)', border: '1px solid var(--accent)', borderRadius: 8, padding: 10, marginBottom: 12, fontSize: 11, color: 'var(--accent-dim)', textAlign: 'center' }}>
             Shared workout — log different stats per person
           </div>
         )}

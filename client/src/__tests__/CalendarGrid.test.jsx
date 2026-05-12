@@ -155,7 +155,7 @@ describe('CalendarGrid', () => {
     expect(onMonthChange).toHaveBeenCalledWith({ year: 2027, month: 0 })
   })
 
-  it('applies purple ring and text color to today\'s cell', () => {
+  it('applies accent ring to today\'s cell', () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date('2026-04-15T12:00:00'))
     render(
@@ -168,7 +168,7 @@ describe('CalendarGrid', () => {
       />
     )
     const cell = screen.getByTestId('day-cell-2026-04-15')
-    expect(cell.style.border).toBe('1px solid rgb(124, 106, 247)')
+    expect(cell.style.border).toBe('1px solid var(--accent)')
     vi.useRealTimers()
   })
 

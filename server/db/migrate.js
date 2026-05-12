@@ -13,6 +13,8 @@ const MIGRATIONS = [
   '007_add_notification_utc_offset.sql',
   '008_add_exercise_type.sql',
   '009_routine_weight_and_4day.sql',
+  '010_cleanup_empty_workouts.sql',
+  '011_add_progress_photos.sql',
 ]
 
 async function migrate() {

@@ -8,17 +8,17 @@ const s = {
   page: { padding: '16px 4px 100px' },
   header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
   title: { fontSize: 18, fontWeight: 700 },
-  backBtn: { background: 'none', border: 'none', color: '#7c6af7', fontSize: 14, cursor: 'pointer' },
+  backBtn: { background: 'none', border: 'none', color: 'var(--accent)', fontSize: 14, cursor: 'pointer' },
   card: { background: '#1a1a2e', borderRadius: 10, padding: 16, marginBottom: 14 },
   label: { fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.5px', color: '#555', marginBottom: 10, display: 'block' },
-  slider: { width: '100%', accentColor: '#7c6af7', height: 4, marginBottom: 4 },
+  slider: { width: '100%', accentColor: 'var(--accent)', height: 4, marginBottom: 4 },
   sliderValue: { fontSize: 22, fontWeight: 700, marginBottom: 8 },
   tagsRow: { display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 4 },
   tag: (active) => ({
     padding: '6px 12px', borderRadius: 20, fontSize: 12,
-    background: active ? '#7c6af7' : '#252540',
+    background: active ? 'var(--accent)' : '#252540',
     color: active ? '#fff' : '#888',
-    border: `1px solid ${active ? '#7c6af7' : '#333'}`,
+    border: `1px solid ${active ? 'var(--accent)' : '#333'}`,
     cursor: 'pointer'
   }),
   row: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 },
@@ -31,7 +31,7 @@ const s = {
     fontSize: 14, fontWeight: 600, cursor: 'pointer'
   }),
   textarea: { background: '#252540', border: '1px solid #333', borderRadius: 8, padding: '10px 12px', color: '#fff', fontSize: 14, width: '100%', outline: 'none', resize: 'none', minHeight: 80 },
-  saveBtn: { background: '#7c6af7', border: 'none', borderRadius: 10, padding: 14, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', width: '100%', marginTop: 8 },
+  saveBtn: { background: 'var(--accent)', border: 'none', borderRadius: 10, padding: 14, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', width: '100%', marginTop: 8 },
 }
 
 export default function WellnessLogger() {

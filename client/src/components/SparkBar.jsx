@@ -1,4 +1,4 @@
-export default function SparkBar({ data = [], color = '#7c6af7', height = 36 }) {
+export default function SparkBar({ data = [], color = 'var(--accent)', height = 36 }) {
   if (!data.length) return <div style={{ height, background: '#252540', borderRadius: 4 }} />
   const max = Math.max(...data.map(d => Number(d.value || 0)))
   return (

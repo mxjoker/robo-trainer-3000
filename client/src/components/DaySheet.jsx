@@ -8,19 +8,34 @@ function formatDate(dateStr) {
   })
 }
 
-export default function DaySheet({ date, data, onClose, onLogWorkout, onLogWellness, onPhotoChange }) {
+export default function DaySheet({ date, data, onClose, onLogWorkout, onLogWellness, onPhotoChange, onEditWorkout, onWorkoutDelete }) {
   const workout = data?.workout
   const wellness = data?.wellness
 
   const [photoUrl, setPhotoUrl] = useState(workout?.photo_url ?? null)
   const [photoLoading, setPhotoLoading] = useState(false)
   const [photoError, setPhotoError] = useState(null)
+  const [expandedSets, setExpandedSets] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const fileInputRef = useRef(null)
 
   if (!date) return null
 
   const isEmpty = !workout && !wellness
   const exerciseNames = [...new Set((workout?.sets ?? []).map(s => s.exercise_name))]
+
+  async function handleDelete() {
+    setDeleting(true)
+    try {
+      await api.delete(`/workouts/${workout.id}`)
+      onWorkoutDelete?.(workout.id)
+    } catch {
+      setShowDeleteConfirm(false)
+    } finally {
+      setDeleting(false)
+    }
+  }
 
   async function handleFileSelect(e) {
     const file = e.target.files?.[0]
@@ -85,28 +100,99 @@ export default function DaySheet({ date, data, onClose, onLogWorkout, onLogWelln
             >Log Workout</button>
             <button
               onClick={onLogWellness}
-              style={{ width: '100%', padding: 12, background: '#7c6af722', border: '1px solid #7c6af7', borderRadius: 10, color: '#a090ff', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
+              style={{ width: '100%', padding: 12, background: 'var(--accent-bg)', border: '1px solid var(--accent)', borderRadius: 10, color: 'var(--accent-dim)', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
             >Log Wellness</button>
           </div>
         ) : (
           <>
             {workout && (
-              <div style={{ background: '#1a1a2e', borderRadius: 10, padding: 14, marginBottom: 10 }}>
-                <div style={{ color: '#4caf50', fontWeight: 600, fontSize: 13, marginBottom: 6 }}>
-                  💪 {workout.notes || 'Workout'}
-                  {workout.duration_minutes != null && (
-                    <span style={{ color: '#555', fontWeight: 400, fontSize: 11 }}> · {workout.duration_minutes} min</span>
-                  )}
+              <div
+                data-testid="workout-card"
+                onClick={() => setExpandedSets(e => !e)}
+                style={{ background: '#1a1a2e', borderRadius: 10, padding: 14, marginBottom: 10, cursor: 'pointer' }}
+              >
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ color: '#4caf50', fontWeight: 600, fontSize: 13, marginBottom: 6 }}>
+                      💪 {workout.notes || 'Workout'}
+                      {workout.duration_minutes != null && (
+                        <span style={{ color: '#555', fontWeight: 400, fontSize: 11 }}> · {workout.duration_minutes} min</span>
+                      )}
+                    </div>
+                    {!expandedSets && exerciseNames.length > 0 && (
+                      <div style={{ color: '#888', fontSize: 12, lineHeight: 1.6 }}>
+                        {exerciseNames.join(' · ')}
+                      </div>
+                    )}
+                    {expandedSets && (() => {
+                      const grouped = {}
+                      for (const s of workout.sets) {
+                        if (!grouped[s.exercise_name]) grouped[s.exercise_name] = []
+                        grouped[s.exercise_name].push(s)
+                      }
+                      return Object.entries(grouped).map(([name, sets]) => {
+                        const setsSummary = sets.map(s =>
+                          `${s.weight_lbs ? `${parseFloat(s.weight_lbs)} lbs` : '—'} × ${s.reps ?? '—'}`
+                        ).join(' · ')
+                        return (
+                          <div key={name} style={{ marginTop: 8 }}>
+                            <div style={{ fontSize: 12, fontWeight: 600, color: '#ccc', marginBottom: 3 }}>{name}</div>
+                            <div style={{ fontSize: 11, color: '#a0aec0' }}>{setsSummary}</div>
+                          </div>
+                        )
+                      })
+                    })()}
+                    {workout.mobility_sets?.length > 0 && (
+                      <div style={{ color: 'var(--accent-dim)', fontSize: 12, marginTop: 4 }}>
+                        Mobility: {workout.mobility_sets.map(ms => ms.exercise_name).join(' · ')}
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ fontSize: 14, color: '#555', marginLeft: 8, flexShrink: 0 }}>
+                    {expandedSets ? '▴' : '▾'}
+                  </div>
                 </div>
-                {exerciseNames.length > 0 && (
-                  <div style={{ color: '#888', fontSize: 12, lineHeight: 1.6 }}>
-                    {exerciseNames.join(' · ')}
-                  </div>
-                )}
-                {workout.mobility_sets?.length > 0 && (
-                  <div style={{ color: '#4db6f7', fontSize: 12, marginTop: 4 }}>
-                    Mobility: {workout.mobility_sets.map(ms => ms.exercise_name).join(' · ')}
-                  </div>
+              </div>
+            )}
+
+            {workout && (
+              <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+                {!showDeleteConfirm ? (
+                  <>
+                    <button
+                      aria-label="Edit Workout"
+                      onClick={() => onEditWorkout?.(workout.id)}
+                      style={{ flex: 1, padding: 11, background: 'var(--accent-bg)', border: '1px solid var(--accent)', borderRadius: 10, color: 'var(--accent)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+                    >
+                      ✏️ Edit Workout
+                    </button>
+                    <button
+                      aria-label="Delete Workout"
+                      onClick={() => setShowDeleteConfirm(true)}
+                      style={{ padding: '11px 14px', background: 'transparent', border: '1px solid #333', borderRadius: 10, color: '#666', fontSize: 13, cursor: 'pointer' }}
+                    >
+                      🗑
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <span style={{ flex: 1, fontSize: 13, color: '#ccc', alignSelf: 'center' }}>Delete this workout?</span>
+                    <button
+                      aria-label="Delete"
+                      onClick={handleDelete}
+                      disabled={deleting}
+                      style={{ padding: '11px 14px', background: '#e05555', border: 'none', borderRadius: 10, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+                    >
+                      Delete
+                    </button>
+                    <button
+                      aria-label="Cancel"
+                      onClick={() => setShowDeleteConfirm(false)}
+                      style={{ padding: '11px 14px', background: 'transparent', border: '1px solid #333', borderRadius: 10, color: '#666', fontSize: 13, cursor: 'pointer' }}
+                    >
+                      Cancel
+                    </button>
+                  </>
                 )}
               </div>
             )}
@@ -131,7 +217,7 @@ export default function DaySheet({ date, data, onClose, onLogWorkout, onLogWelln
                       <button
                         onClick={() => fileInputRef.current?.click()}
                         disabled={photoLoading}
-                        style={{ flex: 1, padding: 7, background: '#252540', border: 'none', borderRadius: 7, color: '#a090ff', fontSize: 11, cursor: 'pointer' }}
+                        style={{ flex: 1, padding: 7, background: '#252540', border: 'none', borderRadius: 7, color: 'var(--accent-dim)', fontSize: 11, cursor: 'pointer' }}
                       >Change</button>
                       <button
                         onClick={handleRemove}
@@ -157,12 +243,12 @@ export default function DaySheet({ date, data, onClose, onLogWorkout, onLogWelln
 
             {wellness && (
               <div style={{ background: '#1a1a2e', borderRadius: 10, padding: 14 }}>
-                <div style={{ color: '#a090ff', fontWeight: 600, fontSize: 13, marginBottom: 8 }}>🌿 Wellness</div>
+                <div style={{ color: 'var(--accent-dim)', fontWeight: 600, fontSize: 13, marginBottom: 8 }}>🌿 Wellness</div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 10 }}>
                   {[
-                    ['Energy', wellness.energy_level, '#7c6af7'],
+                    ['Energy', wellness.energy_level, 'var(--accent)'],
                     ['Mood', wellness.mood, '#4caf50'],
-                    ['Pain', wellness.pain_level, '#f7a76c'],
+                    ['Pain', wellness.pain_level, '#f472b6'],
                   ].map(([label, value, color]) => value != null && (
                     <div key={label} style={{ textAlign: 'center' }}>
                       <div style={{ fontSize: 18, fontWeight: 700, color }}>{value}</div>

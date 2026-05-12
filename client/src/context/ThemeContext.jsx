@@ -4,11 +4,11 @@ const SCHEMES = {
   purple: { accent: '#7c6af7', accentDim: '#a090ff', accentBg: '#7c6af722' },
   blue:   { accent: '#4db6f7', accentDim: '#80cbf9', accentBg: '#4db6f722' },
   green:  { accent: '#4caf8a', accentDim: '#7acdb0', accentBg: '#4caf8a22' },
-  coral:  { accent: '#f76c6c', accentDim: '#f99999', accentBg: '#f76c6c22' },
+  pink:   { accent: '#f472b6', accentDim: '#f9a8d4', accentBg: '#f472b622' },
 }
 
 function applyScheme(name) {
-  const s = SCHEMES[name] || SCHEMES.purple
+  const s = SCHEMES[name] || SCHEMES.blue
   const root = document.documentElement.style
   root.setProperty('--accent', s.accent)
   root.setProperty('--accent-dim', s.accentDim)
@@ -20,7 +20,7 @@ const ThemeContext = createContext(null)
 export function ThemeProvider({ children }) {
   const [scheme, setSchemeState] = useState(() => {
     const saved = localStorage.getItem('rt_color_scheme')
-    return saved && SCHEMES[saved] ? saved : 'purple'
+    return saved && SCHEMES[saved] ? saved : 'blue'
   })
 
   useEffect(() => { applyScheme(scheme) }, [scheme])

@@ -4,7 +4,7 @@ import { MemoryRouter } from 'react-router-dom'
 import Photos from '../pages/Photos'
 
 vi.mock('../api/client', () => ({
-  api: { get: vi.fn(), put: vi.fn() }
+  api: { get: vi.fn(), put: vi.fn(), post: vi.fn(), delete: vi.fn() }
 }))
 
 vi.mock('../context/AuthContext', () => ({
@@ -33,6 +33,13 @@ const workoutNoPhoto = {
   sets: [],
 }
 
+const standalonePhoto = {
+  id: 50,
+  date: '2026-04-20',
+  photo_url: 'https://res.cloudinary.com/test/image/upload/v1/standalone.jpg',
+  notes: 'Week 8 check-in',
+}
+
 function renderPhotos() {
   return render(
     <MemoryRouter>
@@ -55,7 +62,11 @@ describe('Photos', () => {
   })
 
   it('renders a photo tile for each workout with a photo_url', async () => {
-    api.get.mockResolvedValueOnce([workoutWithPhoto, workoutNoPhoto]).mockResolvedValueOnce([])
+    api.get
+      .mockResolvedValueOnce([workoutWithPhoto, workoutNoPhoto])  // /workouts
+      .mockResolvedValueOnce([])   // /photos
+      .mockResolvedValueOnce([])   // /partner/workouts
+      .mockResolvedValueOnce([])   // /partner/photos
     renderPhotos()
     await waitFor(() => {
       expect(screen.getByRole('img', { name: /Push Day/i })).toBeInTheDocument()
@@ -72,8 +83,10 @@ describe('Photos', () => {
       isPartner: true,
     }
     api.get
-      .mockResolvedValueOnce([])                  // /workouts
-      .mockResolvedValueOnce([partnerWorkout])     // /partner/workouts
+      .mockResolvedValueOnce([])                 // /workouts
+      .mockResolvedValueOnce([])                 // /photos
+      .mockResolvedValueOnce([partnerWorkout])   // /partner/workouts
+      .mockResolvedValueOnce([])                 // /partner/photos
     api.put.mockResolvedValue({ photo_url: 'https://res.cloudinary.com/test/new.jpg' })
 
     renderPhotos()
@@ -99,11 +112,129 @@ describe('Photos', () => {
       photo_url: 'https://res.cloudinary.com/test/image/upload/v1/leg.jpg',
       sets: [],
     }
-    api.get.mockResolvedValue([workoutWithPhoto, marchWorkout])
+    api.get
+      .mockResolvedValueOnce([workoutWithPhoto, marchWorkout])  // /workouts
+      .mockResolvedValueOnce([])   // /photos
+      .mockResolvedValueOnce([])   // /partner/workouts
+      .mockResolvedValueOnce([])   // /partner/photos
     renderPhotos()
     await waitFor(() => {
       expect(screen.getByText('April 2026')).toBeInTheDocument()
       expect(screen.getByText('March 2026')).toBeInTheDocument()
     })
+  })
+
+  it('renders standalone photo tile with camera badge', async () => {
+    api.get
+      .mockResolvedValueOnce([])                // /workouts
+      .mockResolvedValueOnce([standalonePhoto]) // /photos
+      .mockResolvedValueOnce([])                // /partner/workouts
+      .mockResolvedValueOnce([])                // /partner/photos
+
+    renderPhotos()
+    await waitFor(() => {
+      expect(screen.getByRole('img', { name: /Week 8 check-in/i })).toBeInTheDocument()
+    })
+    // Camera badge rendered for standalone
+    expect(screen.getByTestId('standalone-badge-50')).toBeInTheDocument()
+  })
+
+  it('merges workout and standalone photos in same month group', async () => {
+    const sameMonthWorkout = { ...workoutWithPhoto, id: 20, date: '2026-04-15', notes: 'Leg Day' }
+    api.get
+      .mockResolvedValueOnce([sameMonthWorkout])  // /workouts
+      .mockResolvedValueOnce([standalonePhoto])   // /photos
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([])
+
+    renderPhotos()
+    await waitFor(() => expect(screen.getByText('April 2026')).toBeInTheDocument())
+    expect(screen.getByRole('img', { name: /Leg Day/i })).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: /Week 8 check-in/i })).toBeInTheDocument()
+  })
+
+  it('shows upload button on the Photos page', async () => {
+    api.get.mockResolvedValue([])
+    renderPhotos()
+    await waitFor(() => expect(screen.getByRole('button', { name: /add photo/i })).toBeInTheDocument())
+  })
+
+  it('opens upload modal when the add photo button is clicked', async () => {
+    api.get.mockResolvedValue([])
+    renderPhotos()
+    await waitFor(() => fireEvent.click(screen.getByRole('button', { name: /add photo/i })))
+    expect(screen.getByPlaceholderText(/caption/i)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /upload/i })).toBeInTheDocument()
+  })
+
+  it('posts to /photos for own photo and adds to grid', async () => {
+    const { uploadToCloudinary } = await import('../services/cloudinaryService')
+    api.get.mockResolvedValue([])
+    api.post.mockResolvedValue({
+      id: 99,
+      date: '2026-05-12',
+      photo_url: 'https://res.cloudinary.com/test/new.jpg',
+      notes: 'Test upload',
+    })
+
+    renderPhotos()
+    await waitFor(() => fireEvent.click(screen.getByRole('button', { name: /add photo/i })))
+
+    fireEvent.change(screen.getByPlaceholderText(/caption/i), { target: { value: 'Test upload' } })
+
+    const file = new File(['img'], 'photo.jpg', { type: 'image/jpeg' })
+    const fileInput = screen.getByTestId('photo-upload-input')
+    fireEvent.change(fileInput, { target: { files: [file] } })
+
+    fireEvent.click(screen.getByRole('button', { name: /upload/i }))
+
+    await waitFor(() =>
+      expect(api.post).toHaveBeenCalledWith('/photos', expect.objectContaining({
+        notes: 'Test upload',
+        photo_url: 'https://res.cloudinary.com/test/new.jpg',
+      }))
+    )
+  })
+
+  it('shows delete button in lightbox for own standalone photo', async () => {
+    api.get
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([standalonePhoto])
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([])
+
+    renderPhotos()
+    await waitFor(() => fireEvent.click(screen.getByRole('img', { name: /Week 8 check-in/i })))
+    expect(screen.getByRole('button', { name: /delete photo/i })).toBeInTheDocument()
+  })
+
+  it('calls DELETE /photos/:id and removes photo from grid', async () => {
+    const { api: apiMock } = await import('../api/client')
+    apiMock.delete = vi.fn().mockResolvedValue(null)
+
+    api.get
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([standalonePhoto])
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([])
+
+    renderPhotos()
+    await waitFor(() => fireEvent.click(screen.getByRole('img', { name: /Week 8 check-in/i })))
+    fireEvent.click(screen.getByRole('button', { name: /delete photo/i }))
+
+    await waitFor(() => expect(apiMock.delete).toHaveBeenCalledWith(`/photos/${standalonePhoto.id}`))
+    expect(screen.queryByRole('img', { name: /Week 8 check-in/i })).not.toBeInTheDocument()
+  })
+
+  it('shows Change photo button for partner standalone photo in lightbox', async () => {
+    api.get
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([{ id: 60, date: '2026-04-20', photo_url: standalonePhoto.photo_url, notes: 'Partner check-in' }])
+
+    renderPhotos()
+    await waitFor(() => fireEvent.click(screen.getByRole('img', { name: /Partner check-in/i })))
+    expect(screen.getByRole('button', { name: /change photo/i })).toBeInTheDocument()
   })
 })

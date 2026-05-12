@@ -17,16 +17,16 @@ function Probe() {
 beforeEach(() => localStorage.clear())
 
 describe('ThemeContext', () => {
-  it('defaults to purple scheme', () => {
+  it('defaults to blue scheme', () => {
     render(<ThemeProvider><Probe /></ThemeProvider>)
-    expect(screen.getByTestId('accent').textContent).toBe('#7c6af7')
+    expect(screen.getByTestId('accent').textContent).toBe('#4db6f7')
   })
 
   it('switches scheme and persists to localStorage', () => {
     render(<ThemeProvider><Probe /></ThemeProvider>)
-    fireEvent.click(screen.getByText('blue'))
-    expect(screen.getByTestId('accent').textContent).toBe('#4db6f7')
-    expect(localStorage.getItem('rt_color_scheme')).toBe('blue')
+    fireEvent.click(screen.getByRole('button', { name: 'green' }))
+    expect(screen.getByTestId('accent').textContent).toBe('#4caf8a')
+    expect(localStorage.getItem('rt_color_scheme')).toBe('green')
   })
 
   it('reads persisted scheme from localStorage on mount', () => {

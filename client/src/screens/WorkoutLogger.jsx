@@ -9,7 +9,7 @@ const s = {
   page: { padding: '16px 4px 100px' },
   header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
   title: { fontSize: 18, fontWeight: 700, letterSpacing: '-0.5px' },
-  backBtn: { background: 'none', border: 'none', color: '#7c6af7', fontSize: 14, cursor: 'pointer', padding: '4px 0' },
+  backBtn: { background: 'none', border: 'none', color: 'var(--accent)', fontSize: 14, cursor: 'pointer', padding: '4px 0' },
   exerciseCard: { background: '#1a1a2e', borderRadius: 10, padding: 14, marginBottom: 12 },
   exerciseName: { fontSize: 14, fontWeight: 600, marginBottom: 10 },
   colHeaders: { display: 'grid', gridTemplateColumns: '32px 1fr 1fr 40px', gap: 6, marginBottom: 6 },
@@ -18,23 +18,39 @@ const s = {
   setNum: { fontSize: 11, color: '#555', textAlign: 'center' },
   input: { background: '#252540', border: '1px solid #333', borderRadius: 6, padding: '8px 4px', color: '#fff', fontSize: 13, fontWeight: 600, textAlign: 'center', width: '100%', outline: 'none' },
   confirmBtn: (done) => ({ background: done ? '#4caf8a' : '#252540', border: `1px solid ${done ? '#4caf8a' : '#333'}`, borderRadius: 6, color: done ? '#fff' : '#555', fontSize: 16, cursor: 'pointer', padding: '6px 0', textAlign: 'center' }),
-  addSetBtn: { background: 'none', border: '1px dashed #333', borderRadius: 6, padding: 8, color: '#7c6af7', fontSize: 12, cursor: 'pointer', width: '100%', marginTop: 4 },
-  addExBtn: { background: '#1a1a2e', border: '1px solid #252540', borderRadius: 10, padding: 12, color: '#7c6af7', fontSize: 13, cursor: 'pointer', width: '100%', marginBottom: 12, fontWeight: 600 },
-  finishBtn: { background: '#7c6af7', border: 'none', borderRadius: 10, padding: 14, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', width: '100%', marginTop: 8 },
+  addSetBtn: { background: 'none', border: '1px dashed #333', borderRadius: 6, padding: 8, color: 'var(--accent)', fontSize: 12, cursor: 'pointer', width: '100%', marginTop: 4 },
+  addExBtn: { background: '#1a1a2e', border: '1px solid #252540', borderRadius: 10, padding: 12, color: 'var(--accent)', fontSize: 13, cursor: 'pointer', width: '100%', marginBottom: 12, fontWeight: 600 },
+  finishBtn: { background: 'var(--accent)', border: 'none', borderRadius: 10, padding: 14, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', width: '100%', marginTop: 8 },
   pill: { background: '#f7a76c22', border: '1px solid #f7a76c55', borderRadius: 20, padding: '4px 12px', color: '#f7a76c', fontSize: 11, display: 'inline-block', marginBottom: 12 },
   exercisePicker: { background: '#111', border: '1px solid #333', borderRadius: 8, padding: 8, color: '#fff', fontSize: 14, width: '100%', marginBottom: 6, outline: 'none' },
-  cantFindLink: { background: 'none', border: 'none', color: '#7c6af7', fontSize: 12, cursor: 'pointer', padding: '4px 0', marginBottom: 12, display: 'block', textAlign: 'left' },
+  cantFindLink: { background: 'none', border: 'none', color: 'var(--accent)', fontSize: 12, cursor: 'pointer', padding: '4px 0', marginBottom: 12, display: 'block', textAlign: 'left' },
   newExForm: { background: '#1a1a2e', border: '1px solid #333', borderRadius: 10, padding: 14, marginBottom: 12 },
   newExInput: { background: '#252540', border: '1px solid #333', borderRadius: 6, padding: '9px 12px', color: '#fff', fontSize: 13, width: '100%', outline: 'none', marginBottom: 8 },
   newExSelect: { background: '#252540', border: '1px solid #333', borderRadius: 6, padding: '9px 12px', color: '#fff', fontSize: 13, width: '100%', outline: 'none', marginBottom: 8 },
   newExCheckRow: { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, fontSize: 13, color: '#ccc' },
   newExActions: { display: 'flex', gap: 8 },
-  addLogBtn: { flex: 1, background: '#7c6af7', border: 'none', borderRadius: 8, padding: '10px 0', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' },
-  cancelLink: { background: 'none', border: 'none', color: '#7c6af7', fontSize: 12, cursor: 'pointer', padding: '10px 8px' },
+  addLogBtn: { flex: 1, background: 'var(--accent)', border: 'none', borderRadius: 8, padding: '10px 0', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' },
+  cancelLink: { background: 'none', border: 'none', color: 'var(--accent)', fontSize: 12, cursor: 'pointer', padding: '10px 8px' },
 }
 
 function makeSet(prev = null) {
-  return { weight: prev?.weight ?? '', reps: prev?.reps ?? '10', confirmed: false }
+  return { weight: prev?.weight ?? '', reps: prev?.reps ?? '10', confirmed: false, dbId: null }
+}
+
+function groupSetsIntoExercises(sets) {
+  const grouped = {}
+  for (const s of sets) {
+    if (!grouped[s.exercise_id]) {
+      grouped[s.exercise_id] = { exerciseId: s.exercise_id, exerciseName: s.exercise_name, sets: [] }
+    }
+    grouped[s.exercise_id].sets.push({
+      weight: String(s.weight_lbs ?? ''),
+      reps: String(s.reps ?? '10'),
+      confirmed: true,
+      dbId: s.id,
+    })
+  }
+  return Object.values(grouped)
 }
 
 export default function WorkoutLogger() {
@@ -45,6 +61,7 @@ export default function WorkoutLogger() {
   const [allExercises, setAllExercises] = useState([])
   const [workoutId, setWorkoutId] = useState(null)
   const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState(null)
   const [showPicker, setShowPicker] = useState(false)
   const [showNewForm, setShowNewForm] = useState(false)
   const [newName, setNewName] = useState('')
@@ -70,39 +87,50 @@ export default function WorkoutLogger() {
   const [partnerPrs, setPartnerPrs] = useState({})
 
   useEffect(() => {
-    api.get('/exercises').then(setAllExercises)
-    api.get('/routines').then(setRoutines).catch(() => {})
-    api.get('/exercises/prs').then(setPrs).catch(() => {})
-    if (forPartner) api.get('/partner/exercises/prs').then(setPartnerPrs).catch(() => {})
+    async function init() {
+      const [fetchedExercises, fetchedRoutines] = await Promise.all([
+        api.get('/exercises'),
+        api.get('/routines').catch(() => []),
+      ])
+      setAllExercises(fetchedExercises)
+      setRoutines(fetchedRoutines)
+      if (forPartner) {
+        api.get('/partner/exercises/prs').then(setPartnerPrs).catch(() => {})
+      } else {
+        api.get('/exercises/prs').then(setPrs).catch(() => {})
+      }
 
-    if (resumeWorkoutId) {
-      setWorkoutId(resumeWorkoutId)
-      api.get(`/workouts/${resumeWorkoutId}`).then(workout => {
-        const grouped = {}
-        for (const s of workout.sets) {
-          if (!grouped[s.exercise_id]) {
-            grouped[s.exercise_id] = { exerciseId: s.exercise_id, exerciseName: s.exercise_name, sets: [] }
-          }
-          grouped[s.exercise_id].sets.push({
-            weight: String(s.weight_lbs ?? ''),
-            reps: String(s.reps ?? '10'),
-            confirmed: true,
-          })
+      if (resumeWorkoutId) {
+        setWorkoutId(resumeWorkoutId)
+        api.get(`/workouts/${resumeWorkoutId}`).then(workout => {
+          setLoggedExercises(groupSetsIntoExercises(workout.sets))
+        }).catch(() => {})
+        setWeightModalDone(true)
+        return
+      }
+
+      const today = new Date().toISOString().split('T')[0]
+      const todayWorkouts = await api.get(`/workouts?start=${today}&end=${today}`)
+
+      if (todayWorkouts.length > 0) {
+        const todayWorkout = todayWorkouts[0]
+        setWorkoutId(todayWorkout.id)
+        if (todayWorkout.sets.length > 0) {
+          setLoggedExercises(groupSetsIntoExercises(todayWorkout.sets))
+          setWeightModalDone(true)
         }
-        setLoggedExercises(Object.values(grouped))
-      }).catch(() => {})
-      localStorage.removeItem('rt_active_workout_id')
-    } else {
-      api.post('/workouts', { date: new Date().toISOString().split('T')[0], is_shared: false })
-        .then(w => setWorkoutId(w.id))
+      } else {
+        api.post('/workouts', { date: today, is_shared: false })
+          .then(w => setWorkoutId(w.id))
+      }
     }
+    init()
   }, [])
 
   async function handleDiscard() {
     if (workoutId) {
       try { await api.delete(`/workouts/${workoutId}`) } catch { /* non-critical */ }
     }
-    localStorage.removeItem('rt_active_workout_id')
     navigate('/')
   }
 
@@ -152,18 +180,44 @@ export default function WorkoutLogger() {
     }))
   }
 
-  function confirmSet(exIdx, setIdx) {
-    setLoggedExercises(prev => prev.map((ex, i) => {
-      if (i !== exIdx) return ex
-      const sets = ex.sets.map((set, j) => {
-        if (j !== setIdx) return set
-        return { ...set, confirmed: true }
-      })
-      // Auto-add next set pre-filled if this was the last
-      const isLast = setIdx === ex.sets.length - 1
+  async function confirmSet(exIdx, setIdx) {
+    const ex = loggedExercises[exIdx]
+    const set = ex.sets[setIdx]
+    const weightLbs = set.weight ? Number(set.weight) : null
+    const reps = set.reps ? Number(set.reps) : null
+
+    setLoggedExercises(prev => prev.map((e, i) => {
+      if (i !== exIdx) return e
+      const sets = e.sets.map((s, j) => j === setIdx ? { ...s, confirmed: true } : s)
+      const isLast = setIdx === e.sets.length - 1
       const newSets = isLast ? [...sets, makeSet(sets[setIdx])] : sets
-      return { ...ex, sets: newSets }
+      return { ...e, sets: newSets }
     }))
+
+    if (!workoutId) return
+    try {
+      if (set.dbId === null) {
+        const saved = await api.post(`/workouts/${workoutId}/sets`, {
+          exercise_id: ex.exerciseId,
+          set_number: setIdx + 1,
+          weight_lbs: weightLbs,
+          reps,
+        })
+        setSaveError(null)
+        setLoggedExercises(prev => prev.map((e, i) => {
+          if (i !== exIdx) return e
+          return {
+            ...e,
+            sets: e.sets.map((s, j) => j === setIdx ? { ...s, dbId: saved.id } : s),
+          }
+        }))
+      } else {
+        await api.put(`/workouts/sets/${set.dbId}`, { weight_lbs: weightLbs, reps })
+        setSaveError(null)
+      }
+    } catch {
+      setSaveError('Set not saved — check connection')
+    }
   }
 
   async function addMobilitySet() {
@@ -282,22 +336,7 @@ export default function WorkoutLogger() {
     if (!workoutId) return
     setSaving(true)
     try {
-      for (const ex of loggedExercises) {
-        const confirmedSets = ex.sets.filter(s => s.confirmed)
-        for (let i = 0; i < confirmedSets.length; i++) {
-          const s = confirmedSets[i]
-          await api.post(`/workouts/${workoutId}/sets`, {
-            exercise_id: ex.exerciseId,
-            set_number: i + 1,
-            weight_lbs: s.weight ? Number(s.weight) : null,
-            reps: s.reps ? Number(s.reps) : null
-          })
-        }
-      }
-      localStorage.removeItem('rt_active_workout_id')
       navigate('/')
-    } catch (err) {
-      alert('Error saving workout: ' + err.message)
     } finally {
       setSaving(false)
     }
@@ -305,6 +344,12 @@ export default function WorkoutLogger() {
 
   return (
     <div style={s.page}>
+      {saveError && (
+        <div style={{ background: '#3a1010', border: '1px solid #e05555', borderRadius: 8, padding: '8px 12px', marginBottom: 12, fontSize: 12, color: '#e05555', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          {saveError}
+          <button onClick={() => setSaveError(null)} style={{ background: 'none', border: 'none', color: '#e05555', cursor: 'pointer', fontSize: 16, lineHeight: 1 }}>×</button>
+        </div>
+      )}
       {!weightModalDone && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, zIndex: 200 }}>
           <div style={{ background: '#1a1a2e', borderRadius: 14, padding: 24, width: '100%', maxWidth: 340, display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -319,7 +364,7 @@ export default function WorkoutLogger() {
               autoFocus
             />
             <button
-              style={{ background: '#7c6af7', border: 'none', borderRadius: 10, padding: 13, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
+              style={{ background: 'var(--accent)', border: 'none', borderRadius: 10, padding: 13, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
               onClick={submitWeight}
             >
               {weightInput ? 'Log & Start Workout' : 'Skip'}
@@ -337,12 +382,12 @@ export default function WorkoutLogger() {
               onClick={handleDiscard}
             >Discard</button>
             <button
-              aria-label="save for later"
+              aria-label="continue later"
               style={{ background: '#252540', border: '1px solid #333', borderRadius: 10, padding: 12, color: '#ccc', fontSize: 14, cursor: 'pointer' }}
-              onClick={() => { localStorage.setItem('rt_active_workout_id', String(workoutId)); navigate('/') }}
-            >Save for later</button>
+              onClick={() => navigate('/')}
+            >Continue Later</button>
             <button
-              style={{ background: 'none', border: 'none', color: '#7c6af7', fontSize: 13, cursor: 'pointer' }}
+              style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: 13, cursor: 'pointer' }}
               onClick={() => setShowCancelModal(false)}
             >Keep logging</button>
           </div>
@@ -399,7 +444,7 @@ export default function WorkoutLogger() {
                 {routines.map(r => (
                   <button
                     key={r.id}
-                    style={{ background: '#1a1a2e', border: '1px solid #252540', borderRadius: 10, padding: '10px 14px', color: '#a090ff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+                    style={{ background: '#1a1a2e', border: '1px solid #252540', borderRadius: 10, padding: '10px 14px', color: 'var(--accent-dim)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
                     onClick={() => loadTemplate(r)}
                   >
                     {r.name.replace(/\s*—.*/, '')}
@@ -432,7 +477,7 @@ export default function WorkoutLogger() {
               <div style={{ display: 'flex', gap: 8 }}>
                 <button
                   data-testid="import-submit-btn"
-                  style={{ flex: 1, background: '#7c6af7', border: 'none', borderRadius: 10, padding: 11, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+                  style={{ flex: 1, background: 'var(--accent)', border: 'none', borderRadius: 10, padding: 11, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
                   onClick={handleImport}
                   disabled={importing || !importText.trim()}
                 >
@@ -440,7 +485,7 @@ export default function WorkoutLogger() {
                 </button>
                 <button
                   data-testid="import-cancel-btn"
-                  style={{ background: 'none', border: 'none', color: '#7c6af7', fontSize: 13, cursor: 'pointer', padding: '11px 8px' }}
+                  style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: 13, cursor: 'pointer', padding: '11px 8px' }}
                   onClick={() => { setPasteExpanded(false); setImportText('') }}
                 >
                   Cancel
@@ -553,7 +598,7 @@ export default function WorkoutLogger() {
             />
             <button
               data-testid="add-mobility-btn"
-              style={{ background: '#7c6af7', border: 'none', borderRadius: 8, padding: '8px 14px', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+              style={{ background: 'var(--accent)', border: 'none', borderRadius: 8, padding: '8px 14px', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
               onClick={addMobilitySet}
               disabled={!mobilityPickerExId || !mobilityDurationInput}
             >Add</button>
