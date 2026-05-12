@@ -8,7 +8,7 @@ function formatDate(dateStr) {
   })
 }
 
-export default function DaySheet({ date, data, onClose, onLogWorkout, onLogWellness, onPhotoChange }) {
+export default function DaySheet({ date, data, onClose, onLogWorkout, onLogWellness, onPhotoChange, onEditWorkout, onWorkoutDelete }) {
   const workout = data?.workout
   const wellness = data?.wellness
 
@@ -16,12 +16,26 @@ export default function DaySheet({ date, data, onClose, onLogWorkout, onLogWelln
   const [photoLoading, setPhotoLoading] = useState(false)
   const [photoError, setPhotoError] = useState(null)
   const [expandedSets, setExpandedSets] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const fileInputRef = useRef(null)
 
   if (!date) return null
 
   const isEmpty = !workout && !wellness
   const exerciseNames = [...new Set((workout?.sets ?? []).map(s => s.exercise_name))]
+
+  async function handleDelete() {
+    setDeleting(true)
+    try {
+      await api.delete(`/workouts/${workout.id}`)
+      onWorkoutDelete?.(workout.id)
+    } catch {
+      setShowDeleteConfirm(false)
+    } finally {
+      setDeleting(false)
+    }
+  }
 
   async function handleFileSelect(e) {
     const file = e.target.files?.[0]
@@ -138,6 +152,48 @@ export default function DaySheet({ date, data, onClose, onLogWorkout, onLogWelln
                     {expandedSets ? '▴' : '▾'}
                   </div>
                 </div>
+              </div>
+            )}
+
+            {workout && (
+              <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+                {!showDeleteConfirm ? (
+                  <>
+                    <button
+                      aria-label="Edit Workout"
+                      onClick={() => onEditWorkout?.(workout.id)}
+                      style={{ flex: 1, padding: 11, background: 'var(--accent-bg)', border: '1px solid var(--accent)', borderRadius: 10, color: 'var(--accent)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+                    >
+                      ✏️ Edit Workout
+                    </button>
+                    <button
+                      aria-label="Delete Workout"
+                      onClick={() => setShowDeleteConfirm(true)}
+                      style={{ padding: '11px 14px', background: 'transparent', border: '1px solid #333', borderRadius: 10, color: '#666', fontSize: 13, cursor: 'pointer' }}
+                    >
+                      🗑
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <span style={{ flex: 1, fontSize: 13, color: '#ccc', alignSelf: 'center' }}>Delete this workout?</span>
+                    <button
+                      aria-label="Delete"
+                      onClick={handleDelete}
+                      disabled={deleting}
+                      style={{ padding: '11px 14px', background: '#e05555', border: 'none', borderRadius: 10, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+                    >
+                      Delete
+                    </button>
+                    <button
+                      aria-label="Cancel"
+                      onClick={() => setShowDeleteConfirm(false)}
+                      style={{ padding: '11px 14px', background: 'transparent', border: '1px solid #333', borderRadius: 10, color: '#666', fontSize: 13, cursor: 'pointer' }}
+                    >
+                      Cancel
+                    </button>
+                  </>
+                )}
               </div>
             )}
 

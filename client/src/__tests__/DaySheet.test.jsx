@@ -3,7 +3,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import DaySheet from '../components/DaySheet'
 
 vi.mock('../api/client', () => ({
-  api: { put: vi.fn() }
+  api: { put: vi.fn(), delete: vi.fn() }
 }))
 
 vi.mock('../services/cloudinaryService', () => ({
@@ -216,6 +216,48 @@ describe('DaySheet', () => {
     fireEvent.click(screen.getByTestId('workout-card'))
     fireEvent.click(screen.getByTestId('workout-card'))
     expect(screen.queryByText(/185/)).not.toBeInTheDocument()
+  })
+
+  it('shows Edit Workout and delete buttons when workout is present', () => {
+    render(
+      <DaySheet date="2026-04-21" data={{ workout }} onClose={() => {}} onLogWorkout={() => {}} onLogWellness={() => {}} onEditWorkout={() => {}} onWorkoutDelete={() => {}} />
+    )
+    expect(screen.getByRole('button', { name: /edit workout/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /delete workout/i })).toBeInTheDocument()
+  })
+
+  it('calls onEditWorkout with workout id when Edit Workout is clicked', () => {
+    const onEditWorkout = vi.fn()
+    render(
+      <DaySheet date="2026-04-21" data={{ workout }} onClose={() => {}} onLogWorkout={() => {}} onLogWellness={() => {}} onEditWorkout={onEditWorkout} onWorkoutDelete={() => {}} />
+    )
+    fireEvent.click(screen.getByRole('button', { name: /edit workout/i }))
+    expect(onEditWorkout).toHaveBeenCalledWith(workout.id)
+  })
+
+  it('shows delete confirmation when delete button is clicked', () => {
+    render(
+      <DaySheet date="2026-04-21" data={{ workout }} onClose={() => {}} onLogWorkout={() => {}} onLogWellness={() => {}} onEditWorkout={() => {}} onWorkoutDelete={() => {}} />
+    )
+    fireEvent.click(screen.getByRole('button', { name: /delete workout/i }))
+    expect(screen.getByText(/delete this workout/i)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^delete$/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /cancel/i })).toBeInTheDocument()
+  })
+
+  it('calls api.delete and onWorkoutDelete on confirm', async () => {
+    const { api } = await import('../api/client')
+    api.delete.mockResolvedValue(null)
+    const onWorkoutDelete = vi.fn()
+    render(
+      <DaySheet date="2026-04-21" data={{ workout }} onClose={() => {}} onLogWorkout={() => {}} onLogWellness={() => {}} onEditWorkout={() => {}} onWorkoutDelete={onWorkoutDelete} />
+    )
+    fireEvent.click(screen.getByRole('button', { name: /delete workout/i }))
+    fireEvent.click(screen.getByRole('button', { name: /^delete$/i }))
+    await waitFor(() => {
+      expect(api.delete).toHaveBeenCalledWith(`/workouts/${workout.id}`)
+      expect(onWorkoutDelete).toHaveBeenCalledWith(workout.id)
+    })
   })
 
   it('calls api.put with null and onPhotoChange when Remove is clicked', async () => {
