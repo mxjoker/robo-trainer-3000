@@ -155,8 +155,8 @@ export default function Photos() {
     async function load() {
       const hasPartner = !!currentUser.partner_id
       const [myWorkouts, myPhotos, partnerWorkouts, partnerPhotos] = await Promise.all([
-        api.get('/workouts'),
-        api.get('/photos'),
+        api.get('/workouts').catch(() => []),
+        api.get('/photos').catch(() => []),
         hasPartner ? api.get('/partner/workouts').catch(() => []) : Promise.resolve([]),
         hasPartner ? api.get('/partner/photos').catch(() => []) : Promise.resolve([]),
       ])

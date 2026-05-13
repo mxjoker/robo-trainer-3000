@@ -21,7 +21,7 @@ const s = {
   addSetBtn: { background: 'none', border: '1px dashed #333', borderRadius: 6, padding: 8, color: 'var(--accent)', fontSize: 12, cursor: 'pointer', width: '100%', marginTop: 4 },
   addExBtn: { background: '#1a1a2e', border: '1px solid #252540', borderRadius: 10, padding: 12, color: 'var(--accent)', fontSize: 13, cursor: 'pointer', width: '100%', marginBottom: 12, fontWeight: 600 },
   finishBtn: { background: 'var(--accent)', border: 'none', borderRadius: 10, padding: 14, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', width: '100%', marginTop: 8 },
-  pill: { background: '#f7a76c22', border: '1px solid #f7a76c55', borderRadius: 20, padding: '4px 12px', color: '#f7a76c', fontSize: 11, display: 'inline-block', marginBottom: 12 },
+  pill: { background: '#f472b622', border: '1px solid #f472b655', borderRadius: 20, padding: '4px 12px', color: '#f472b6', fontSize: 11, display: 'inline-block', marginBottom: 12 },
   exercisePicker: { background: '#111', border: '1px solid #333', borderRadius: 8, padding: 8, color: '#fff', fontSize: 14, width: '100%', marginBottom: 6, outline: 'none' },
   cantFindLink: { background: 'none', border: 'none', color: 'var(--accent)', fontSize: 12, cursor: 'pointer', padding: '4px 0', marginBottom: 12, display: 'block', textAlign: 'left' },
   newExForm: { background: '#1a1a2e', border: '1px solid #333', borderRadius: 10, padding: 14, marginBottom: 12 },
